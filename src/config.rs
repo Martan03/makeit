@@ -17,10 +17,10 @@ impl Config {
         let mut dir = Config::get_dir();
         dir.push("config.json");
 
-        match serde_json::from_str(
+        match serde_json::from_str::<Self>(
             &read_to_string(&dir).unwrap_or(String::new()),
         ) {
-            Ok(conf) => conf,
+            Ok(conf) => Ok(conf),
             Err(_) => Ok(Self::default()),
         }
     }

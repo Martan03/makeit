@@ -1,15 +1,21 @@
 use std::{
     error::Error,
-    fs::{copy, create_dir, create_dir_all, read_dir},
+    fs::{copy, create_dir, create_dir_all, read_dir, read_to_string, File},
+    io::Write,
     path::PathBuf,
     process::Command,
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::{config::Config, err::template_err::TemplateErr};
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Template {
+    #[serde(skip)]
     path: PathBuf,
-    pre: PathBuf,
+    pre: Option<PathBuf>,
+    post: Option<PathBuf>,
 }
 
 impl Template {
@@ -23,8 +29,11 @@ impl Template {
 
         create_dir_all(&path)
             .map_err(|_| TemplateErr::Creating(name.to_string()))?;
-        let pre = config.template_dir.join("pre");
-        Ok(Self { path, pre })
+        Ok(Self {
+            path,
+            pre: Some(config.template_dir.join("pre")),
+            post: None,
+        })
     }
 
     /// Loads template by given name
@@ -35,8 +44,36 @@ impl Template {
             return Err(TemplateErr::NotFound(name.to_string()));
         }
 
-        let pre = config.template_dir.join("pre");
-        Ok(Self { path, pre })
+        let tmpl_path = path.join(format!("{}.makeit.json", name));
+        let json = read_to_string(&tmpl_path).unwrap_or(String::new());
+        match serde_json::from_str::<Template>(&json) {
+            Ok(tmplt) => Ok(tmplt),
+            Err(_) => Ok(Self {
+                path: path,
+                pre: None,
+                post: None,
+            }),
+        }
+    }
+
+    /// Saves the template
+    pub fn save(&self) -> Result<(), String> {
+        create_dir_all(&self.path).map_err(|e| e.to_string())?;
+
+        let name = self
+            .path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or("tmplt")?;
+        let path = self.path.join(format!("{}.makeit.json", name));
+        let mut file = File::create(&path).map_err(|e| e.to_string())?;
+
+        let json_string =
+            serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
+        file.write_all(json_string.as_bytes())
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
     }
 
     pub fn copy(&self, to: &PathBuf) -> Result<(), String> {
@@ -47,9 +84,10 @@ impl Template {
     }
 
     pub fn pre_exec(&self) -> Result<(), String> {
-        let status = Command::new(&self.pre)
-            .status()
-            .map_err(|e| e.to_string())?;
+        let Some(pre) = &self.pre else {
+            return Ok(());
+        };
+        let status = Command::new(pre).status().map_err(|e| e.to_string())?;
 
         Ok(())
     }
