@@ -1,13 +1,21 @@
+use std::path::PathBuf;
+
 use config::Config;
+
+use crate::template::Template;
 
 mod args;
 mod config;
 mod err;
+mod template;
 
 fn main() -> Result<(), String> {
     let config = Config::load()?;
-    println!("{}", config.template_dir.to_str().unwrap_or(""));
-    config.save()?;
+
+    let tmplt = Template::load(&config, "test").map_err(|e| e.to_string())?;
+    tmplt
+        .copy(&PathBuf::from("./test"))
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }
