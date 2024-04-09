@@ -8,10 +8,19 @@ use termint::{
 
 use crate::err::args_err::ArgsErr;
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum Action {
+    Load,
+    Create,
+    List,
+}
+
 /// Struct for parsing arguments
+#[derive(Debug)]
 pub struct Args {
     pub template: Option<String>,
-    pub dst: Option<PathBuf>,
+    pub dst: PathBuf,
+    pub action: Action,
     pub help: bool,
 }
 
@@ -24,6 +33,13 @@ impl Args {
         args_iter.next();
         while let Some(arg) = args_iter.next() {
             match arg.as_str() {
+                "-c" | "--create" => parsed.action = Action::Create,
+                "-d" | "--dir" => {
+                    parsed.dst = PathBuf::from(
+                        args_iter.next().ok_or(ArgsErr::MissingParam)?,
+                    );
+                }
+                "-l" | "--list" => parsed.action = Action::List,
                 "-h" | "--help" => {
                     parsed.help = true;
                     return Ok(parsed);
@@ -43,8 +59,12 @@ impl Args {
         );
         help!(
             "Usage":
-            "makeit" ["Template name"] ["Option"] => "Loads given template\n"
+            "makeit" ["template name"] ["options"] => "Loads given template\n"
+            "makeit" ["options"] => "Behaves according to the options\n"
             "Options":
+            "-c  --create" => "Creates new template with given name\n"
+            "-d --dir" ["path"] =>
+                "Sets directory to create/load template from/to\n"
             "-h  --help" => "Prints this help (other options are ignored)"
         );
     }
@@ -54,7 +74,8 @@ impl Default for Args {
     fn default() -> Self {
         Self {
             template: None,
-            dst: None,
+            dst: PathBuf::from("."),
+            action: Action::Load,
             help: false,
         }
     }

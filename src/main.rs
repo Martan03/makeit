@@ -1,7 +1,7 @@
-use std::{fs::create_dir_all, path::PathBuf};
-
 use args::Args;
 use config::Config;
+use err::template_err::TemplateErr;
+use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 
 use crate::template::Template;
 
@@ -18,22 +18,32 @@ fn main() -> Result<(), String> {
     }
 
     let config = Config::load()?;
-    if let Some(template) = args.template {
-        let dst = PathBuf::from("../testing");
-        let tmplt =
-            Template::load(&config, &template).map_err(|e| e.to_string())?;
-        _ = create_dir_all(&dst);
-        tmplt.pre_exec(&dst)?;
-        tmplt.copy(&dst)?;
-        tmplt.post_exec(&dst)?;
+    match args.action {
+        args::Action::Load => load(&config, &args),
+        args::Action::Create => create(&config, &args),
+        args::Action::List => Template::list(&config),
     }
-
-    // let tmplt = Template::new(&config, "test").map_err(|e| e.to_string())?;
-    // _ = tmplt.pre_exec();
-    // tmplt
-    //     .copy(&PathBuf::from("./test"))
-    //     .map_err(|e| e.to_string())?;
-    // _ = tmplt.save();
+    .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+fn load(config: &Config, args: &Args) -> Result<(), TemplateErr> {
+    let Some(template) = &args.template else {
+        printe("no template name provided");
+        return Ok(());
+    };
+    Template::load(&config, &args.dst, template)
+}
+
+fn create(config: &Config, args: &Args) -> Result<(), TemplateErr> {
+    let Some(template) = &args.template else {
+        printe("no template name provided");
+        return Ok(());
+    };
+    Template::create(&config, &args.dst, template)
+}
+
+fn printe(msg: &str) {
+    eprintln!("{} {msg}", "Error:".fg(Fg::Red));
 }

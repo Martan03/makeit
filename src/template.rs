@@ -20,55 +20,70 @@ pub struct Template {
 
 impl Template {
     /// Creates new template with given name
-    pub fn create(dir: &PathBuf, name: &str) -> Result<Self, TemplateErr> {
-        let path = dir.join(name);
-
-        if path.exists() {
+    pub fn create(
+        config: &Config,
+        src: &PathBuf,
+        name: &str,
+    ) -> Result<(), TemplateErr> {
+        let dir = config.template_dir.join(name);
+        if dir.exists() {
             return Err(TemplateErr::Exists(name.to_string()));
         }
 
-        create_dir_all(&path)
+        create_dir_all(&dir)
             .map_err(|_| TemplateErr::Creating(name.to_string()))?;
-        Ok(Self {
-            path,
-            pre: Some(dir.join("pre")),
+
+        let dst = dir.join("template");
+        create_dir(&dst)
+            .map_err(|_| TemplateErr::Creating(name.to_string()))?;
+        Template::copy_files(src, &dst)
+            .map_err(|_| TemplateErr::Creating(name.to_string()))?;
+
+        let tmplt = Self {
+            path: dir,
+            pre: None,
             post: None,
-        })
+        };
+        tmplt
+            .save()
+            .map_err(|_| TemplateErr::Creating(name.to_string()))?;
+        Ok(())
     }
 
     /// Loads template by given name
-    pub fn load(config: &Config, name: &str) -> Result<Self, TemplateErr> {
-        let path = config.template_dir.join(name);
-
-        if !path.exists() {
+    pub fn load(
+        config: &Config,
+        dst: &PathBuf,
+        name: &str,
+    ) -> Result<(), TemplateErr> {
+        let dir = config.template_dir.join(name);
+        if !dir.exists() {
             return Err(TemplateErr::NotFound(name.to_string()));
         }
 
-        let tmpl_path = path.join(format!("{}.makeit.json", name));
-        let json = read_to_string(&tmpl_path).unwrap_or(String::new());
-        match serde_json::from_str::<Template>(&json) {
-            Ok(mut tmplt) => {
-                tmplt.path = path;
-                Ok(tmplt)
-            }
-            Err(_) => Ok(Self {
-                path: path,
-                pre: None,
-                post: None,
-            }),
-        }
+        let path = dir.join("makeit.json");
+        let json = read_to_string(&path).unwrap_or(String::new());
+        let mut tmplt = serde_json::from_str::<Template>(&json)
+            .map_err(|_| TemplateErr::Loading)?;
+        tmplt.path = dir;
+
+        create_dir_all(dst).map_err(|_| TemplateErr::Loading)?;
+        tmplt.pre_exec(dst)?;
+        tmplt.copy(dst)?;
+        tmplt.post_exec(dst)?;
+
+        Ok(())
+    }
+
+    /// Lists all templates
+    pub fn list(config: &Config) -> Result<(), TemplateErr> {
+        Ok(Template::list_tmplts(&config.template_dir)
+            .map_err(|_| TemplateErr::Listing)?)
     }
 
     /// Saves the template
-    pub fn save(&self) -> Result<(), String> {
-        create_dir_all(&self.path).map_err(|e| e.to_string())?;
-
-        let name = self
-            .path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .ok_or("tmplt")?;
-        let path = self.path.join(format!("{}.makeit.json", name));
+    fn save(&self) -> Result<(), String> {
+        let path = self.path.join("makeit.json");
         let mut file = File::create(&path).map_err(|e| e.to_string())?;
 
         let json_string =
@@ -79,27 +94,30 @@ impl Template {
         Ok(())
     }
 
-    pub fn copy(&self, to: &PathBuf) -> Result<(), String> {
-        create_dir_all(to).map_err(|e| e.to_string())?;
+    fn copy(&self, to: &PathBuf) -> Result<(), TemplateErr> {
         let src = self.get_template_dir();
-        Template::copy_files(&src, to).map_err(|e| e.to_string())?;
+        if let Err(e) = Template::copy_files(&src, to) {
+            eprintln!("{e}");
+        };
         Ok(())
     }
 
     /// Executes pre script
-    pub fn pre_exec(&self, dst: &PathBuf) -> Result<(), String> {
+    fn pre_exec(&self, dst: &PathBuf) -> Result<(), TemplateErr> {
         let Some(pre) = &self.pre else {
             return Ok(());
         };
-        Ok(Template::exec_script(pre, dst)?)
+        Ok(Template::exec_script(pre, dst)
+            .map_err(|_| TemplateErr::PreExec)?)
     }
 
     /// Executes post script
-    pub fn post_exec(&self, dst: &PathBuf) -> Result<(), String> {
+    fn post_exec(&self, dst: &PathBuf) -> Result<(), TemplateErr> {
         let Some(post) = &self.post else {
             return Ok(());
         };
-        Ok(Template::exec_script(post, dst)?)
+        Ok(Template::exec_script(post, dst)
+            .map_err(|_| TemplateErr::PostExec)?)
     }
 
     /// Gets template directory path
@@ -128,6 +146,23 @@ impl Template {
             } else {
                 let dest_path = dest.join(filename);
                 copy(&path, &dest_path).unwrap();
+            }
+        }
+        Ok(())
+    }
+
+    fn list_tmplts(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
+        for entry in read_dir(dir)? {
+            let entry = entry?;
+            let file_type = entry.file_type()?;
+
+            let path = entry.path();
+            let Some(filename) = path.file_name() else {
+                continue;
+            };
+
+            if file_type.is_dir() {
+                println!("{}", filename.to_str().unwrap_or(""));
             }
         }
         Ok(())
