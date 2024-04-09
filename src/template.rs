@@ -20,8 +20,8 @@ pub struct Template {
 
 impl Template {
     /// Creates new template with given name
-    pub fn new(config: &Config, name: &str) -> Result<Self, TemplateErr> {
-        let path = config.template_dir.join(name);
+    pub fn create(dir: &PathBuf, name: &str) -> Result<Self, TemplateErr> {
+        let path = dir.join(name);
 
         if path.exists() {
             return Err(TemplateErr::Exists(name.to_string()));
@@ -31,7 +31,7 @@ impl Template {
             .map_err(|_| TemplateErr::Creating(name.to_string()))?;
         Ok(Self {
             path,
-            pre: Some(config.template_dir.join("pre")),
+            pre: Some(dir.join("pre")),
             post: None,
         })
     }
@@ -47,7 +47,10 @@ impl Template {
         let tmpl_path = path.join(format!("{}.makeit.json", name));
         let json = read_to_string(&tmpl_path).unwrap_or(String::new());
         match serde_json::from_str::<Template>(&json) {
-            Ok(tmplt) => Ok(tmplt),
+            Ok(mut tmplt) => {
+                tmplt.path = path;
+                Ok(tmplt)
+            }
             Err(_) => Ok(Self {
                 path: path,
                 pre: None,
@@ -77,19 +80,26 @@ impl Template {
     }
 
     pub fn copy(&self, to: &PathBuf) -> Result<(), String> {
-        create_dir_all(&to).map_err(|e| e.to_string())?;
+        create_dir_all(to).map_err(|e| e.to_string())?;
         let src = self.get_template_dir();
         Template::copy_files(&src, to).map_err(|e| e.to_string())?;
         Ok(())
     }
 
-    pub fn pre_exec(&self) -> Result<(), String> {
+    /// Executes pre script
+    pub fn pre_exec(&self, dst: &PathBuf) -> Result<(), String> {
         let Some(pre) = &self.pre else {
             return Ok(());
         };
-        let status = Command::new(pre).status().map_err(|e| e.to_string())?;
+        Ok(Template::exec_script(pre, dst)?)
+    }
 
-        Ok(())
+    /// Executes post script
+    pub fn post_exec(&self, dst: &PathBuf) -> Result<(), String> {
+        let Some(post) = &self.post else {
+            return Ok(());
+        };
+        Ok(Template::exec_script(post, dst)?)
     }
 
     /// Gets template directory path
@@ -120,6 +130,15 @@ impl Template {
                 copy(&path, &dest_path).unwrap();
             }
         }
+        Ok(())
+    }
+
+    /// Executes script
+    fn exec_script(script: &PathBuf, dst: &PathBuf) -> Result<(), String> {
+        _ = Command::new(script)
+            .current_dir(dst)
+            .status()
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 }
