@@ -65,6 +65,7 @@ impl Args {
             "-c  --create" => "Creates new template with given name\n"
             "-d --dir" ["path"] =>
                 "Sets directory to create/load template from/to\n"
+            "-l --list" => "Lists all templates\n"
             "-h  --help" => "Prints this help (other options are ignored)"
         );
     }
