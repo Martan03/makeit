@@ -1,12 +1,12 @@
 use args::Args;
 use config::Config;
 use err::template_err::TemplateErr;
-use parser::Parser;
 use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 
 use crate::template::Template;
 
 mod args;
+mod ast;
 mod config;
 mod err;
 mod lexer;
