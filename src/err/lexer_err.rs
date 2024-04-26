@@ -5,6 +5,7 @@ pub enum LexerErr {
     UnclosedLit,
     InvalidIdent,
     UnclosedBlock,
+    UnexpectedToken,
 }
 
 impl Display for LexerErr {
@@ -16,6 +17,7 @@ impl Display for LexerErr {
                 write!(f, "identifier contains invalid characters")
             }
             LexerErr::UnclosedBlock => write!(f, "code block not closed"),
+            LexerErr::UnexpectedToken => write!(f, "unexpected token"),
         }
     }
 }
