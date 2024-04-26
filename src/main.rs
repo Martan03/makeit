@@ -1,7 +1,6 @@
 use args::Args;
 use config::Config;
 use err::template_err::TemplateErr;
-use parser::Parser;
 use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 
 use crate::template::Template;
@@ -13,13 +12,9 @@ mod err;
 mod lexer;
 mod parser;
 mod template;
+mod writer;
 
 fn main() -> Result<(), String> {
-    let mut text = "val ? val : \"second\" }}".chars();
-    let mut parser = Parser::new(&mut text);
-    parser.parse()?;
-    return Ok(());
-
     let args = Args::parse(std::env::args()).map_err(|_| "args err")?;
     if args.help {
         Args::help();

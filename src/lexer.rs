@@ -1,3 +1,5 @@
+use std::io;
+
 use crate::err::lexer_err::LexerErr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -13,23 +15,24 @@ pub enum Token {
 #[derive(Debug)]
 pub struct Lexer<'a, I>
 where
-    I: Iterator<Item = char>,
+    I: Iterator<Item = Result<char, io::Error>>,
 {
     text: &'a mut I,
-    cur: Option<char>,
+    pub cur: Option<char>,
 }
 
 impl<'a, I> Lexer<'a, I>
 where
-    I: Iterator<Item = char>,
+    I: Iterator<Item = Result<char, io::Error>>,
 {
     /// Creates new [`Lexer`]
     pub fn new(text: &'a mut I) -> Self {
-        let c = text.next();
-        Self {
-            text: text.into(),
-            cur: c,
-        }
+        let mut lex = Self {
+            text: text,
+            cur: None,
+        };
+        lex.next_char();
+        lex
     }
 
     /// Gets next [`Token`]
@@ -112,7 +115,10 @@ where
     }
 
     /// Gets next char from the text
-    fn next_char(&mut self) {
-        self.cur = self.text.next();
+    pub fn next_char(&mut self) {
+        match self.text.next() {
+            Some(Ok(c)) => self.cur = Some(c),
+            _ => self.cur = None,
+        }
     }
 }

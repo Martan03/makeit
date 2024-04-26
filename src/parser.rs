@@ -1,63 +1,68 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, io};
 
 use crate::{
     ast::{CheckExpr, Expr, LitExpr, NullCheckExpr, Value, VarExpr},
     err::lexer_err::LexerErr,
     lexer::{Lexer, Token},
+    writer::Writer,
 };
 
 pub struct Parser<'a, I>
 where
-    I: Iterator<Item = char>,
+    I: Iterator<Item = Result<char, io::Error>>,
 {
     lexer: Lexer<'a, I>,
+    output: Writer,
+    vars: HashMap<String, String>,
     token: Token,
 }
 
 impl<'a, I> Parser<'a, I>
 where
-    I: Iterator<Item = char>,
+    I: Iterator<Item = Result<char, io::Error>>,
 {
     /// Creates new [`Parser`]
-    pub fn new(text: &'a mut I) -> Self {
+    pub fn new(text: &'a mut I, vars: HashMap<String, String>) -> Self {
         Self {
             lexer: Lexer::new(text),
+            output: Writer::Stdout,
+            vars,
             token: Token::End,
         }
     }
 
     /// Parses given text
     pub fn parse(&mut self) -> Result<(), String> {
-        // while let Some(c) = self.text.next() {
-        //     if c == '{' {
-        //         self.check_opening().map_err(|e| e.to_string())?;
-        //     } else {
-        //         print!("{c}");
-        //     }
-        // }
-        self.handle_code().map_err(|e| e.to_string())
+        while let Some(c) = self.lexer.cur {
+            if c == '{' {
+                self.check_opening().map_err(|e| e.to_string())?;
+            } else {
+                self.output.write(c).map_err(|e| e.to_string())?;
+            }
+            self.lexer.next_char();
+        }
+        Ok(())
     }
 
     fn check_opening(&mut self) -> Result<(), LexerErr> {
-        // let Some(c) = self.text.next() else {
-        //     print!("{{");
-        //     return Ok(());
-        // };
+        self.lexer.next_char();
+        let Some(c) = self.lexer.cur else {
+            _ = self.output.write('{');
+            return Ok(());
+        };
 
-        // if c != '{' {
-        //     print!("{{{c}");
-        //     return Ok(());
-        // }
+        if c != '{' {
+            _ = self.output.write_str(&format!("{{{c}"));
+            return Ok(());
+        }
 
+        self.lexer.next_char();
         self.handle_code()
     }
 
     fn handle_code(&mut self) -> Result<(), LexerErr> {
-        println!();
         let expr = self.parse_expr()?;
-        let mut vars: HashMap<String, String> = HashMap::new();
-        vars.insert("val".to_string(), "first".to_string());
-        println!("{:?}", expr.eval(&vars));
+        _ = self.output.write_str(&format!("{}", expr.eval(&self.vars)));
 
         Ok(())
     }

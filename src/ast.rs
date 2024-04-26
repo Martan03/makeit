@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 /// Represents value that expression returns
 #[derive(Debug, Clone, PartialEq)]
@@ -8,6 +8,19 @@ pub enum Value {
     Double(f64),
     Bool(bool),
     Null,
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::String(s) => write!(f, "{s}"),
+            Value::Int(_) => todo!(),
+            Value::Double(_) => todo!(),
+            Value::Bool(true) => write!(f, "true"),
+            Value::Bool(false) => write!(f, "false"),
+            Value::Null => write!(f, "null"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

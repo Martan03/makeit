@@ -1,14 +1,16 @@
 use std::{
+    collections::HashMap,
     error::Error,
     fs::{copy, create_dir, create_dir_all, read_dir, read_to_string, File},
-    io::Write,
+    io::{BufReader, Write},
     path::PathBuf,
     process::Command,
 };
 
 use serde::{Deserialize, Serialize};
+use utf8_chars::BufReadCharsExt;
 
-use crate::{config::Config, err::template_err::TemplateErr};
+use crate::{config::Config, err::template_err::TemplateErr, parser::Parser};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Template {
@@ -145,7 +147,10 @@ impl Template {
                 Template::copy_files(&path, &dest_path)?;
             } else {
                 let dest_path = dest.join(filename);
-                copy(&path, &dest_path).unwrap();
+                let mut buf = BufReader::new(File::open(&path)?);
+                let mut chars = buf.chars();
+                let mut parser = Parser::new(&mut chars, HashMap::new());
+                parser.parse()?;
             }
         }
         Ok(())
