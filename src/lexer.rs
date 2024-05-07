@@ -2,6 +2,7 @@ use std::io;
 
 use crate::err::lexer_err::LexerErr;
 
+/// Represents token read by the lexer
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     Colon,
@@ -12,6 +13,7 @@ pub enum Token {
     End,
 }
 
+/// Provides lexical analysis of the file
 #[derive(Debug)]
 pub struct Lexer<'a, I>
 where

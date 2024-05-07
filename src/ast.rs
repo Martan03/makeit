@@ -27,7 +27,6 @@ impl Display for Value {
 pub enum Expr {
     Var(VarExpr),
     Lit(LitExpr),
-    Cond(CondExpr),
     Check(CheckExpr),
     NullCheck(NullCheckExpr),
     None,
@@ -38,7 +37,6 @@ impl Expr {
         match self {
             Expr::Var(v) => v.eval(vars),
             Expr::Lit(l) => l.eval(vars),
-            Expr::Cond(c) => c.eval(vars),
             Expr::Check(c) => c.eval(vars),
             Expr::NullCheck(c) => c.eval(vars),
             Expr::None => Value::Null,
@@ -84,20 +82,8 @@ impl VarExpr {
 expr_struct!(LitExpr { value: Value });
 
 impl LitExpr {
-    fn eval(&self, vars: &HashMap<String, String>) -> Value {
+    fn eval(&self, _vars: &HashMap<String, String>) -> Value {
         self.value.clone()
-    }
-}
-
-expr_struct!(CondExpr {
-    left: Box<Expr>,
-    cond: String,
-    right: Box<Expr>,
-});
-
-impl CondExpr {
-    fn eval(&self, vars: &HashMap<String, String>) -> Value {
-        todo!()
     }
 }
 
@@ -137,7 +123,7 @@ impl NullCheckExpr {
 expr_struct!(NoneExpr {});
 
 impl NoneExpr {
-    fn eval(&self, vars: &HashMap<String, String>) -> Value {
+    fn eval(&self, _vars: &HashMap<String, String>) -> Value {
         Value::Null
     }
 }

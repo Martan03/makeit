@@ -17,7 +17,7 @@ where
     I: Iterator<Item = Result<char, io::Error>>,
 {
     lexer: Lexer<'a, I>,
-    output: Writer,
+    output: Writer<'a>,
     vars: HashMap<String, String>,
     token: Token,
 }
@@ -27,6 +27,8 @@ where
     I: Iterator<Item = Result<char, io::Error>>,
 {
     /// Creates new [`Parser`]
+    /// This exists for testing purposes
+    #[allow(unused)]
     pub fn new(text: &'a mut I, vars: HashMap<String, String>) -> Self {
         Self {
             lexer: Lexer::new(text),
@@ -36,7 +38,7 @@ where
         }
     }
 
-    /// Creates new [`Parser`], that outputs to the file
+    /// Creates new [`Parser`] that outputs to the file
     pub fn file(
         text: &'a mut I,
         vars: HashMap<String, String>,
@@ -48,6 +50,20 @@ where
             vars,
             token: Token::End,
         })
+    }
+
+    /// Creates new [`Parser`] that outputs to the given string
+    pub fn string(
+        text: &'a mut I,
+        vars: HashMap<String, String>,
+        out: &'a mut String,
+    ) -> Self {
+        Self {
+            lexer: Lexer::new(text),
+            output: Writer::String(out),
+            vars,
+            token: Token::End,
+        }
     }
 
     /// Parses given text

@@ -3,13 +3,15 @@ use std::{
     io::{self, BufWriter, Write},
 };
 
-pub enum Writer {
+/// Writer enum that support uniform writing to file, string and stdout
+pub enum Writer<'a> {
     File(BufWriter<File>),
-    String(String),
+    String(&'a mut String),
     Stdout,
 }
 
-impl Writer {
+impl<'a> Writer<'a> {
+    /// Writers given character
     pub fn write(&mut self, content: char) -> io::Result<()> {
         match self {
             Writer::File(writer) => writer.write_all(&[content as u8]),
@@ -18,6 +20,7 @@ impl Writer {
         }
     }
 
+    /// Writes given string
     pub fn write_str(&mut self, content: &str) -> io::Result<()> {
         match self {
             Writer::File(writer) => writer.write_all(content.as_bytes()),

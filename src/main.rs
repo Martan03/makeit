@@ -9,6 +9,7 @@ mod args;
 mod ast;
 mod config;
 mod err;
+mod file_options;
 mod lexer;
 mod parser;
 mod template;
