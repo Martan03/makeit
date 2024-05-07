@@ -1,4 +1,9 @@
-use std::{collections::HashMap, io};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{self, BufWriter},
+    path::PathBuf,
+};
 
 use crate::{
     ast::{CheckExpr, Expr, LitExpr, NullCheckExpr, Value, VarExpr},
@@ -29,6 +34,20 @@ where
             vars,
             token: Token::End,
         }
+    }
+
+    /// Creates new [`Parser`], that outputs to the file
+    pub fn file(
+        text: &'a mut I,
+        vars: HashMap<String, String>,
+        file: &PathBuf,
+    ) -> Result<Self, io::Error> {
+        Ok(Self {
+            lexer: Lexer::new(text),
+            output: Writer::File(BufWriter::<File>::new(File::create(file)?)),
+            vars,
+            token: Token::End,
+        })
     }
 
     /// Parses given text

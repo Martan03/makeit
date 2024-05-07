@@ -55,7 +55,6 @@ where
             Some('}') => {
                 self.next_char();
                 if self.cur == Some('}') {
-                    self.next_char();
                     Ok(Token::End)
                 } else {
                     self.next_char();
@@ -106,6 +105,11 @@ where
             if c == '"' {
                 self.next_char();
                 return Ok(Token::Literal(res));
+            } else if c == '\\' {
+                self.next_char();
+                if self.cur == None {
+                    return Err(LexerErr::UnclosedLit);
+                }
             }
 
             res.push(c);

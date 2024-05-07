@@ -149,7 +149,8 @@ impl Template {
                 let dest_path = dest.join(filename);
                 let mut buf = BufReader::new(File::open(&path)?);
                 let mut chars = buf.chars();
-                let mut parser = Parser::new(&mut chars, HashMap::new());
+                let mut parser =
+                    Parser::file(&mut chars, HashMap::new(), &dest_path)?;
                 parser.parse()?;
             }
         }
