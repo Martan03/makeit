@@ -1,6 +1,6 @@
 use args::Args;
 use config::Config;
-use err::template_err::TemplateErr;
+use err::{error::Error, template_err::TemplateErr};
 use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 
 use crate::template::Template;
@@ -12,6 +12,7 @@ mod err;
 mod file_options;
 mod lexer;
 mod parser;
+mod prompt;
 mod template;
 mod writer;
 
@@ -33,7 +34,7 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-fn load(config: &Config, args: &Args) -> Result<(), TemplateErr> {
+fn load(config: &Config, args: &Args) -> Result<(), Error> {
     let Some(template) = &args.template else {
         printe("no template name provided");
         return Ok(());
@@ -41,7 +42,7 @@ fn load(config: &Config, args: &Args) -> Result<(), TemplateErr> {
     Template::load(&config, &args.dst, template)
 }
 
-fn create(config: &Config, args: &Args) -> Result<(), TemplateErr> {
+fn create(config: &Config, args: &Args) -> Result<(), Error> {
     let Some(template) = &args.template else {
         printe("no template name provided");
         return Ok(());

@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     ast::{CheckExpr, Expr, LitExpr, NullCheckExpr, Value, VarExpr},
-    err::lexer_err::LexerErr,
+    err::{error::Error, lexer_err::LexerErr},
     lexer::{Lexer, Token},
     writer::Writer,
 };
@@ -67,12 +67,12 @@ where
     }
 
     /// Parses given text
-    pub fn parse(&mut self) -> Result<(), String> {
+    pub fn parse(&mut self) -> Result<(), Error> {
         while let Some(c) = self.lexer.cur {
             if c == '{' {
-                self.check_opening().map_err(|e| e.to_string())?;
+                self.check_opening()?;
             } else {
-                self.output.write(c).map_err(|e| e.to_string())?;
+                self.output.write(c)?;
             }
             self.lexer.next_char();
         }
