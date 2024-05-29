@@ -4,7 +4,7 @@ use std::{
         copy, create_dir, create_dir_all, read_dir, read_to_string,
         remove_dir_all, File,
     },
-    io::{BufReader, Write},
+    io::{self, BufReader, Write},
     path::PathBuf,
     process::Command,
 };
@@ -43,7 +43,7 @@ impl Template {
             if !yes_no("Do you want to replace it?") {
                 return Ok(());
             }
-            _ = remove_dir_all(&dir);
+            remove_dir_all(&dir)?;
         }
 
         let dst = dir.join("template");
@@ -57,8 +57,7 @@ impl Template {
             post: None,
             file_options: HashMap::new(),
         };
-        tmplt.save()?;
-        Ok(())
+        tmplt.save()
     }
 
     /// Loads template by given name
@@ -72,6 +71,13 @@ impl Template {
             return Err(TemplateErr::NotFound(name.to_string()).into());
         }
 
+        if dst.exists() && dst.read_dir()?.next().is_some() {
+            println!("Directory is not empty.");
+            if !yes_no("Do you want to continue anyway?") {
+                return Ok(());
+            }
+        }
+
         let path = dir.join("makeit.json");
         let json = read_to_string(&path).unwrap_or(String::new());
         let mut tmplt = serde_json::from_str::<Template>(&json)?;
@@ -80,14 +86,12 @@ impl Template {
         create_dir_all(dst)?;
         tmplt.pre_exec(dst)?;
         tmplt.copy(dst)?;
-        tmplt.post_exec(dst)?;
-
-        Ok(())
+        tmplt.post_exec(dst)
     }
 
     /// Lists all templates
     pub fn list(config: &Config) -> Result<(), Error> {
-        Ok(Template::list_tmplts(&config.template_dir)?)
+        Template::list_tmplts(&config.template_dir)
     }
 
     /// Saves the template
@@ -97,16 +101,12 @@ impl Template {
 
         let json_string = serde_json::to_string_pretty(self)?;
         file.write_all(json_string.as_bytes())?;
-
         Ok(())
     }
 
     fn copy(&mut self, to: &PathBuf) -> Result<(), Error> {
         let src = self.get_template_dir();
-        if let Err(e) = self.copy_files(&src, to) {
-            eprintln!("{e}");
-        };
-        Ok(())
+        self.copy_files(&src, to)
     }
 
     /// Executes pre script
@@ -114,8 +114,8 @@ impl Template {
         let Some(pre) = &self.pre else {
             return Ok(());
         };
-        Ok(Template::exec_script(pre, dst)
-            .map_err(|_| TemplateErr::PreExec)?)
+        Template::exec_script(pre, dst)
+            .map_err(|_| TemplateErr::PreExec.into())
     }
 
     /// Executes post script
@@ -123,8 +123,8 @@ impl Template {
         let Some(post) = &self.post else {
             return Ok(());
         };
-        Ok(Template::exec_script(post, dst)
-            .map_err(|_| TemplateErr::PostExec)?)
+        Template::exec_script(post, dst)
+            .map_err(|_| TemplateErr::PostExec.into())
     }
 
     /// Gets template directory path
@@ -136,20 +136,17 @@ impl Template {
     fn copy_files(
         &mut self,
         src: &PathBuf,
-        dest: &PathBuf,
+        dst: &PathBuf,
     ) -> Result<(), Error> {
         for entry in read_dir(src)? {
-            let entry = entry?;
-            let file_type = entry.file_type()?;
-
-            let path = entry.path();
+            let path = entry?.path();
             let Some(filename) = path.file_name() else {
                 continue;
             };
 
-            let dst_path = dest.join(filename);
-            if file_type.is_dir() {
-                create_dir(&dst_path)?;
+            let dst_path = dst.join(filename);
+            if path.is_dir() {
+                Template::create_dir(&dst_path)?;
                 self.copy_files(&path, &dst_path)?;
             } else {
                 self.make_file(&path, &dst_path)?;
@@ -161,17 +158,14 @@ impl Template {
     /// Copies files raw - without parsing
     fn copy_files_raw(src: &PathBuf, dst: &PathBuf) -> Result<(), Error> {
         for entry in read_dir(src)? {
-            let entry = entry?;
-            let file_type = entry.file_type()?;
-
-            let path = entry.path();
+            let path = entry?.path();
             let Some(filename) = path.file_name() else {
                 continue;
             };
 
             let dst_path = dst.join(filename);
-            if file_type.is_dir() {
-                create_dir(&dst_path)?;
+            if path.is_dir() {
+                Template::create_dir(&dst_path)?;
                 Template::copy_files_raw(&path, &dst_path)?;
             } else {
                 Template::copy_file(&path, &dst_path)?;
@@ -211,7 +205,8 @@ impl Template {
         let path = src.to_string_lossy().into_owned();
         let item = match self.file_options.get(&path) {
             Some(i) => i,
-            None => return Template::parse_file(src, dst),
+            // TODO: deside which option will be default (copy/make)
+            None => return Template::copy_file(src, dst),
         };
 
         let mut dst = dst.to_owned();
@@ -221,8 +216,7 @@ impl Template {
             let mut parser =
                 Parser::string(&mut iter, HashMap::new(), &mut filename);
             parser.parse()?;
-            println!("{}", filename)
-            // dst.set_file_name(fil);
+            dst.set_file_name(filename);
         }
 
         match &item.action {
@@ -244,5 +238,14 @@ impl Template {
         let mut chars = buf.chars();
         let mut parser = Parser::file(&mut chars, HashMap::new(), dst)?;
         Ok(parser.parse()?)
+    }
+
+    /// Creates dir when doesn't exist
+    fn create_dir(path: &PathBuf) -> io::Result<()> {
+        match create_dir(path) {
+            Ok(()) => Ok(()),
+            Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => Ok(()),
+            Err(e) => Err(e),
+        }
     }
 }
