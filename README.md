@@ -1,6 +1,9 @@
+![Makeit thumbnail](assets/thumbnail-small.png)
+
 # makeit
 
 Utility for creating and loading templates
+
 
 ## Table of Contents
 - [Installation](#installation)
