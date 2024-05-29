@@ -1,6 +1,6 @@
 use args::Args;
 use config::Config;
-use err::{error::Error, template_err::TemplateErr};
+use err::error::Error;
 use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 
 use crate::template::Template;
@@ -17,7 +17,7 @@ mod template;
 mod writer;
 
 fn main() -> Result<(), String> {
-    let args = Args::parse(std::env::args()).map_err(|_| "args err")?;
+    let mut args = Args::parse(std::env::args()).map_err(|_| "args err")?;
     if args.help {
         Args::help();
         return Ok(());
@@ -25,21 +25,23 @@ fn main() -> Result<(), String> {
 
     let config = Config::load()?;
     match args.action {
-        args::Action::Load => load(&config, &args),
+        args::Action::Load => load(&config, &mut args),
         args::Action::Create => create(&config, &args),
         args::Action::List => Template::list(&config),
     }
-    .map_err(|e| e.to_string())?;
-
-    Ok(())
+    .map_err(|e| e.to_string())
 }
 
-fn load(config: &Config, args: &Args) -> Result<(), Error> {
+fn load(config: &Config, args: &mut Args) -> Result<(), Error> {
+    if let Some(name) = args.dst.file_name() {
+        args.add_var("NAME", name.to_string_lossy().to_string());
+    }
+
     let Some(template) = &args.template else {
         printe("no template name provided");
         return Ok(());
     };
-    Template::load(&config, &args.dst, template)
+    Template::load(&config, &args, template)
 }
 
 fn create(config: &Config, args: &Args) -> Result<(), Error> {

@@ -26,7 +26,7 @@ impl Config {
     }
 
     /// Saves config
-    pub fn save(&self) -> Result<(), String> {
+    pub fn _save(&self) -> Result<(), String> {
         let mut dir = Config::get_dir();
         create_dir_all(&dir).map_err(|e| e.to_string())?;
 

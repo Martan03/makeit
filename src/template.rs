@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use utf8_chars::BufReadCharsExt;
 
 use crate::{
+    args::Args,
     config::Config,
     err::{error::Error, template_err::TemplateErr},
     file_options::{FileAction, FileOptions},
@@ -28,6 +29,7 @@ pub struct Template {
     pre: Option<PathBuf>,
     post: Option<PathBuf>,
     file_options: HashMap<String, FileOptions>,
+    vars: HashMap<String, String>,
 }
 
 impl Template {
@@ -56,6 +58,7 @@ impl Template {
             pre: None,
             post: None,
             file_options: HashMap::new(),
+            vars: HashMap::new(),
         };
         tmplt.save()
     }
@@ -63,7 +66,7 @@ impl Template {
     /// Loads template by given name
     pub fn load(
         config: &Config,
-        dst: &PathBuf,
+        args: &Args,
         name: &str,
     ) -> Result<(), Error> {
         let dir = config.template_dir.join(name);
@@ -71,7 +74,7 @@ impl Template {
             return Err(TemplateErr::NotFound(name.to_string()).into());
         }
 
-        if dst.exists() && dst.read_dir()?.next().is_some() {
+        if args.dst.exists() && args.dst.read_dir()?.next().is_some() {
             println!("Directory is not empty.");
             if !yes_no("Do you want to continue anyway?") {
                 return Ok(());
@@ -83,10 +86,16 @@ impl Template {
         let mut tmplt = serde_json::from_str::<Template>(&json)?;
         tmplt.path = dir;
 
-        create_dir_all(dst)?;
-        tmplt.pre_exec(dst)?;
-        tmplt.copy(dst)?;
-        tmplt.post_exec(dst)
+        for (name, value) in args.vars.iter() {
+            if !tmplt.vars.contains_key(name) {
+                tmplt.vars.insert(name.to_string(), value.to_string());
+            }
+        }
+
+        create_dir_all(&args.dst)?;
+        tmplt.pre_exec(&args.dst)?;
+        tmplt.copy(&args.dst)?;
+        tmplt.post_exec(&args.dst)
     }
 
     /// Lists all templates
@@ -214,14 +223,14 @@ impl Template {
             let mut filename = String::new();
             let mut iter = name.chars().map(Ok);
             let mut parser =
-                Parser::string(&mut iter, HashMap::new(), &mut filename);
+                Parser::string(&mut iter, &self.vars, &mut filename);
             parser.parse()?;
             dst.set_file_name(filename);
         }
 
         match &item.action {
             FileAction::Copy => Template::copy_file(src, &dst),
-            FileAction::Make => Template::parse_file(src, &dst),
+            FileAction::Make => self.parse_file(src, &dst),
             FileAction::Ignore => Ok(()),
         }
     }
@@ -233,10 +242,10 @@ impl Template {
     }
 
     /// Copies file from `src` to `dst` with parsing it
-    fn parse_file(src: &PathBuf, dst: &PathBuf) -> Result<(), Error> {
+    fn parse_file(&self, src: &PathBuf, dst: &PathBuf) -> Result<(), Error> {
         let mut buf = BufReader::new(File::open(src)?);
         let mut chars = buf.chars();
-        let mut parser = Parser::file(&mut chars, HashMap::new(), dst)?;
+        let mut parser = Parser::file(&mut chars, &self.vars, dst)?;
         Ok(parser.parse()?)
     }
 

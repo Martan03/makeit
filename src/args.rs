@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use termint::{
     enums::fg::Fg,
@@ -22,6 +22,7 @@ pub struct Args {
     pub dst: PathBuf,
     pub action: Action,
     pub help: bool,
+    pub vars: HashMap<String, String>,
 }
 
 impl Args {
@@ -44,10 +45,25 @@ impl Args {
                     parsed.help = true;
                     return Ok(parsed);
                 }
+                var if var.starts_with("-D") => {
+                    let var = &var[2..];
+                    if let Some((name, val)) = var.split_once('=') {
+                        parsed.vars.insert(name.to_string(), val.to_string());
+                    } else {
+                        parsed.vars.insert(var.to_string(), "".to_string());
+                    }
+                }
                 name => parsed.template = Some(name.to_string()),
             }
         }
         Ok(parsed)
+    }
+
+    /// Adds variable if isn't already defined
+    pub fn add_var(&mut self, name: &str, value: String) {
+        if !self.vars.contains_key(name) {
+            self.vars.insert(name.to_string(), value);
+        }
     }
 
     /// Prints help
@@ -65,6 +81,7 @@ impl Args {
             "-c  --create" => "Creates new template with given name\n"
             "-d --dir" ["path"] =>
                 "Sets directory to create/load template from/to\n"
+            "-D\x1b[39m[variable name]=[value]" => "Defines a variable\n"
             "-l --list" => "Lists all templates\n"
             "-h  --help" => "Prints this help (other options are ignored)"
         );
@@ -78,6 +95,7 @@ impl Default for Args {
             dst: PathBuf::from("."),
             action: Action::Load,
             help: false,
+            vars: HashMap::new(),
         }
     }
 }
