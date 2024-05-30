@@ -63,13 +63,14 @@ where
         text: &'a mut I,
         vars: &'a HashMap<String, String>,
         out: &'a mut String,
-    ) -> Self {
-        Self {
+    ) -> Result<(), Error> {
+        let mut parser = Self {
             lexer: Lexer::new(text),
             output: Writer::String(out),
             vars,
             token: None,
-        }
+        };
+        parser.parse()
     }
 
     /// Parses given text

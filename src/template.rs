@@ -10,6 +10,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use shell_words::split;
 use utf8_chars::BufReadCharsExt;
 
 use crate::{
@@ -26,8 +27,9 @@ use crate::{
 pub struct Template {
     #[serde(skip)]
     path: PathBuf,
-    pre: Option<PathBuf>,
-    post: Option<PathBuf>,
+    pre: Option<String>,
+    post: Option<String>,
+    #[serde(alias = "fileOptions")]
     file_options: HashMap<String, FileOptions>,
     vars: HashMap<String, String>,
 }
@@ -131,7 +133,7 @@ impl Template {
         let Some(pre) = &self.pre else {
             return Ok(());
         };
-        Template::exec_script(pre, dst)
+        self.exec_script(pre, dst)
             .map_err(|_| TemplateErr::PreExec.into())
     }
 
@@ -140,7 +142,7 @@ impl Template {
         let Some(post) = &self.post else {
             return Ok(());
         };
-        Template::exec_script(post, dst)
+        self.exec_script(post, dst)
             .map_err(|_| TemplateErr::PostExec.into())
     }
 
@@ -209,20 +211,44 @@ impl Template {
     }
 
     /// Executes script
-    fn exec_script(script: &PathBuf, dst: &PathBuf) -> Result<(), String> {
-        _ = Command::new(script)
-            .current_dir(dst)
-            .status()
+    fn exec_script(
+        &self,
+        script: &String,
+        dst: &PathBuf,
+    ) -> Result<(), String> {
+        let mut pcmd = String::new();
+        Parser::string(&mut script.chars().map(Ok), &self.vars, &mut pcmd)
             .map_err(|e| e.to_string())?;
+
+        let args = split(&pcmd).map_err(|e| e.to_string())?;
+        if args.is_empty() {
+            return Ok(());
+        }
+
+        let cmd = &args[0];
+        let args = &args[1..];
+
+        let command = Command::new(cmd)
+            .args(args)
+            .current_dir(dst)
+            .envs(&self.vars)
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !command.status.success() {
+            return Err(String::from_utf8_lossy(&command.stderr).to_string());
+        }
         Ok(())
     }
 
     /// Makes file - follows options stored in template config
     fn make_file(&self, src: &PathBuf, dst: &PathBuf) -> Result<(), Error> {
-        let path = src.to_string_lossy().into_owned();
+        let rel_path = src
+            .strip_prefix(self.get_template_dir())
+            .map(|p| p.to_path_buf())
+            .map_err(|e| e.to_string())?;
+        let path = rel_path.to_string_lossy().to_string();
         let item = match self.file_options.get(&path) {
             Some(i) => i,
-            // TODO: deside which option will be default (copy/make)
             None => return Template::copy_file(src, dst),
         };
 
@@ -230,9 +256,7 @@ impl Template {
         if let Some(name) = &item.name {
             let mut filename = String::new();
             let mut iter = name.chars().map(Ok);
-            let mut parser =
-                Parser::string(&mut iter, &self.vars, &mut filename);
-            parser.parse()?;
+            Parser::string(&mut iter, &self.vars, &mut filename)?;
             dst.set_file_name(filename);
         }
 

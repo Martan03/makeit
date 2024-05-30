@@ -8,6 +8,7 @@ pub enum Error {
     LexerErr(LexerErr),
     TemplateErr(TemplateErr),
     Serde(serde_json::Error),
+    Msg(String),
 }
 
 impl Display for Error {
@@ -17,6 +18,7 @@ impl Display for Error {
             Error::LexerErr(e) => write!(f, "{e}"),
             Error::TemplateErr(e) => write!(f, "{e}"),
             Error::Serde(e) => write!(f, "{e}"),
+            Error::Msg(m) => write!(f, "{m}"),
         }
     }
 }
@@ -42,5 +44,11 @@ impl From<TemplateErr> for Error {
 impl From<serde_json::Error> for Error {
     fn from(value: serde_json::Error) -> Self {
         Self::Serde(value)
+    }
+}
+
+impl From<String> for Error {
+    fn from(value: String) -> Self {
+        Self::Msg(value)
     }
 }

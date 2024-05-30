@@ -15,8 +15,7 @@ mod tests {
         vars.insert("b".to_string(), "world".to_string());
 
         let mut result = String::new();
-        let mut parser = Parser::string(&mut input, &vars, &mut result);
-        _ = parser.parse();
+        _ = Parser::string(&mut input, &vars, &mut result);
         assert_eq!(result, "true\nthis world crazy");
     }
 }

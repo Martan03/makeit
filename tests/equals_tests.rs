@@ -13,8 +13,7 @@ mod tests {
         let vars = HashMap::new();
 
         let mut result = String::new();
-        let mut parser = Parser::string(&mut input, &vars, &mut result);
-        _ = parser.parse();
+        _ = Parser::string(&mut input, &vars, &mut result);
         assert_eq!(result, "true\nfalse");
     }
 
@@ -33,8 +32,7 @@ mod tests {
         vars.insert("c".to_string(), "test".to_string());
 
         let mut result = String::new();
-        let mut parser = Parser::string(&mut input, &vars, &mut result);
-        _ = parser.parse();
+        _ = Parser::string(&mut input, &vars, &mut result);
         assert_eq!(result, "true\nfalse\ntrue\nfalse\ntrue");
     }
 }
