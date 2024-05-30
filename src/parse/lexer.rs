@@ -132,14 +132,18 @@ where
     fn read_literal(&mut self) -> Result<Token, LexerErr> {
         self.next_char();
         let mut res = String::new();
-        while let Some(c) = self.cur {
+        while let Some(mut c) = self.cur {
             if c == '"' {
                 self.next_char();
                 return Ok(Token::Literal(res));
             } else if c == '\\' {
                 self.next_char();
-                if self.cur == None {
-                    return Err(LexerErr::UnclosedLit);
+                c = match self.cur {
+                    Some('n') => '\n',
+                    Some('r') => '\r',
+                    Some('t') => '\t',
+                    Some(c) => c,
+                    None => return Err(LexerErr::UnclosedLit),
                 }
             }
 
