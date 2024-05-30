@@ -108,7 +108,7 @@ where
     }
 
     fn parse_expr(&mut self) -> Result<Expr, LexerErr> {
-        self.next_token();
+        self.next_token()?;
         let mut prev = Expr::None;
 
         while let Some(token) = self.token.take() {
@@ -122,33 +122,22 @@ where
                 Token::Literal(v) => {
                     prev = self.parse_lit(prev, v.to_owned())?
                 }
-                _ => break,
+                _ => {
+                    self.token = Some(token);
+                    break;
+                }
             }
-        }
-        loop {
-            match &self.token {
-                Token::Question => return self.parse_check(prev),
-                Token::NullCheck => return self.parse_null_check(prev),
-                Token::Equals => return self.parse_equals(prev),
-                Token::Ident(v) => {
-                    prev = self.parse_var(prev, v.to_owned())?
-                }
-                Token::Literal(v) => {
-                    prev = self.parse_lit(prev, v.to_owned())?
-                }
-                _ => break,
-            };
-            self.token = self.lexer.next()?;
+            self.next_token()?;
         }
         Ok(prev)
     }
 
     fn parse_expr_hp(&mut self) -> Result<Expr, LexerErr> {
-        self.token = self.lexer.next()?;
+        self.next_token()?;
         let prev = Expr::None;
 
-        loop {
-            match &self.token {
+        while let Some(token) = self.token.take() {
+            match token {
                 Token::Ident(v) => return self.parse_var(prev, v.to_owned()),
                 Token::Literal(v) => {
                     return self.parse_lit(prev, v.to_owned())
@@ -162,7 +151,7 @@ where
     fn parse_check(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
         let left = self.parse_expr()?;
 
-        if self.token != Token::Colon {
+        if !matches!(self.token, Some(Token::Colon)) {
             return Err(LexerErr::UnexpectedToken);
         }
 

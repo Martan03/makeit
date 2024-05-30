@@ -33,6 +33,8 @@ fn main() -> Result<(), String> {
     let mut parser = Parser::string(&mut input, &vars, &mut result);
     _ = parser.parse();
 
+    println!("{result}");
+
     return Ok(());
     let mut args = Args::parse(std::env::args()).map_err(|_| "args err")?;
     if args.help {
