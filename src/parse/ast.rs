@@ -4,8 +4,6 @@ use std::{collections::HashMap, fmt::Display};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     String(String),
-    Int(i64),
-    Double(f64),
     Bool(bool),
     Null,
 }
@@ -14,8 +12,6 @@ impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::String(s) => write!(f, "{s}"),
-            Value::Int(_) => todo!(),
-            Value::Double(_) => todo!(),
             Value::Bool(true) => write!(f, "true"),
             Value::Bool(false) => write!(f, "false"),
             Value::Null => write!(f, "null"),
@@ -30,6 +26,7 @@ pub enum Expr {
     Check(CheckExpr),
     NullCheck(NullCheckExpr),
     Equals(EqualsExpr),
+    Add(AddExpr),
     None,
 }
 
@@ -41,6 +38,7 @@ impl Expr {
             Expr::Check(c) => c.eval(vars),
             Expr::NullCheck(c) => c.eval(vars),
             Expr::Equals(e) => e.eval(vars),
+            Expr::Add(e) => e.eval(vars),
             Expr::None => Value::Null,
         }
     }
@@ -133,5 +131,19 @@ impl EqualsExpr {
         let right = self.right.eval(vars);
 
         Value::Bool(left == right)
+    }
+}
+
+expr_struct!(AddExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+});
+
+impl AddExpr {
+    fn eval(&self, vars: &HashMap<String, String>) -> Value {
+        let left = self.left.eval(vars);
+        let right = self.right.eval(vars);
+
+        Value::String(left.to_string() + &right.to_string())
     }
 }

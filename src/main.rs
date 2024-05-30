@@ -1,9 +1,8 @@
-use std::{collections::HashMap, env};
+use std::env;
 
 use args::Args;
 use config::Config;
 use err::error::Error;
-use makeit::parse::parser::Parser;
 use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 
 use crate::template::Template;
@@ -18,24 +17,6 @@ mod template;
 mod writer;
 
 fn main() -> Result<(), String> {
-    let mut input = "{{ b == \"hello\" ? \"hello b\" : \"what\" }}
-{{ test ? \"test not null\" : \"test null\" }}
-{{ a == b ? \"equal\" : \"not equal\" }}
-{{ b == c ? \"equal\" : \"not equal\" }}"
-        .chars()
-        .map(Ok);
-    let mut vars = HashMap::new();
-    vars.insert("a".to_string(), "hello".to_string());
-    vars.insert("b".to_string(), "test".to_string());
-    vars.insert("c".to_string(), "test".to_string());
-
-    let mut result = String::new();
-    let mut parser = Parser::string(&mut input, &vars, &mut result);
-    _ = parser.parse();
-
-    println!("{result}");
-
-    return Ok(());
     let mut args = Args::parse(std::env::args()).map_err(|_| "args err")?;
     if args.help {
         Args::help();

@@ -12,7 +12,12 @@ pub enum Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        match self {
+            Error::IOErr(e) => write!(f, "{e}"),
+            Error::LexerErr(e) => write!(f, "{e}"),
+            Error::TemplateErr(e) => write!(f, "{e}"),
+            Error::Serde(e) => write!(f, "{e}"),
+        }
     }
 }
 

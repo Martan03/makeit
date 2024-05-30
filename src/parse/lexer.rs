@@ -11,6 +11,9 @@ pub enum Token {
     Equals,
     Ident(String),
     Literal(String),
+    OpenParen,
+    CloseParen,
+    Plus,
     End,
 }
 
@@ -65,6 +68,18 @@ where
                     Err(LexerErr::InvalidToken)
                 }
             }
+            Some('(') => {
+                self.next_char();
+                Ok(Token::OpenParen)
+            }
+            Some(')') => {
+                self.next_char();
+                Ok(Token::CloseParen)
+            }
+            Some('+') => {
+                self.next_char();
+                Ok(Token::Plus)
+            }
             None => Err(LexerErr::UnclosedBlock),
             _ => Err(LexerErr::InvalidToken),
         }
@@ -104,7 +119,7 @@ where
             }
 
             if !c.is_alphanumeric() && c != '_' {
-                return Err(LexerErr::InvalidIdent);
+                break;
             }
 
             res.push(c);

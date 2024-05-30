@@ -12,7 +12,8 @@ use crate::{
 
 use super::{
     ast::{
-        CheckExpr, EqualsExpr, Expr, LitExpr, NullCheckExpr, Value, VarExpr,
+        AddExpr, CheckExpr, EqualsExpr, Expr, LitExpr, NullCheckExpr, Value,
+        VarExpr,
     },
     lexer::{Lexer, Token},
 };
@@ -39,7 +40,7 @@ where
             lexer: Lexer::new(text),
             output: Writer::Stdout,
             vars,
-            token: Some(Token::End),
+            token: None,
         }
     }
 
@@ -53,7 +54,7 @@ where
             lexer: Lexer::new(text),
             output: Writer::File(BufWriter::<File>::new(File::create(file)?)),
             vars,
-            token: Some(Token::End),
+            token: None,
         })
     }
 
@@ -67,7 +68,7 @@ where
             lexer: Lexer::new(text),
             output: Writer::String(out),
             vars,
-            token: Some(Token::End),
+            token: None,
         }
     }
 
@@ -103,6 +104,7 @@ where
     fn handle_code(&mut self) -> Result<(), LexerErr> {
         let expr = self.parse_expr()?;
         _ = self.output.write_str(&format!("{}", expr.eval(&self.vars)));
+        self.token = None;
 
         Ok(())
     }
@@ -115,13 +117,15 @@ where
             match token {
                 Token::Question => return self.parse_check(prev),
                 Token::NullCheck => return self.parse_null_check(prev),
-                Token::Equals => return self.parse_equals(prev),
+                Token::Equals => prev = self.parse_equals(prev)?,
                 Token::Ident(v) => {
                     prev = self.parse_var(prev, v.to_owned())?
                 }
                 Token::Literal(v) => {
                     prev = self.parse_lit(prev, v.to_owned())?
                 }
+                Token::OpenParen => return self.parse_paren(prev),
+                Token::Plus => prev = self.parse_plus(prev)?,
                 _ => {
                     self.token = Some(token);
                     break;
@@ -142,7 +146,11 @@ where
                 Token::Literal(v) => {
                     return self.parse_lit(prev, v.to_owned())
                 }
-                _ => break,
+                Token::OpenParen => return self.parse_paren(prev),
+                _ => {
+                    self.token = Some(token);
+                    break;
+                }
             }
         }
         Ok(prev)
@@ -151,7 +159,7 @@ where
     fn parse_check(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
         let left = self.parse_expr()?;
 
-        if !matches!(self.token, Some(Token::Colon)) {
+        if !matches!(self.token.take(), Some(Token::Colon)) {
             return Err(LexerErr::UnexpectedToken);
         }
 
@@ -194,6 +202,21 @@ where
             Expr::None => Ok(Expr::Lit(LitExpr::new(Value::String(val)))),
             _ => Err(LexerErr::UnexpectedToken),
         }
+    }
+
+    fn parse_paren(&mut self, _prev: Expr) -> Result<Expr, LexerErr> {
+        let expr = self.parse_expr()?;
+
+        if !matches!(self.token.take(), Some(Token::CloseParen)) {
+            return Err(LexerErr::UnexpectedToken);
+        }
+        Ok(expr)
+    }
+
+    fn parse_plus(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
+        let right = self.parse_expr_hp()?;
+
+        Ok(Expr::Add(AddExpr::new(Box::new(prev), Box::new(right))))
     }
 
     fn next_token(&mut self) -> Result<(), LexerErr> {

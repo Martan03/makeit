@@ -20,7 +20,10 @@ makeit \- utility for creating and loading templates
 is a command-line utility for creating and loading templates.
 
 Templates also support usage of basic expressions. Expressions in templates are
-enclosed in \fB{{\fR and \fB}}\fR. Expressions can contain following:
+enclosed in \fB{{\fR and \fB}}\fR. Precedence of the expressions can be
+modified by using parentheses.
+
+Expressions can contain following:
 
 .SS VARIABLES
 Variable name starts with alphabetic character or underscore and is followed
@@ -72,6 +75,19 @@ double quotes (\fB"\fR)
 Other sequences are expanded to the character following backslash. This can be
 used for escaping expressions, which are enclosed in \fB{{ }}\fR. These
 expression won't be executed.
+
+.SS OPERATOR +
+The plus operator \fB+\fR is used for literal and variable concatenation. It
+allows you to combine two literals/variables into a single literal.
+
+The syntax is:
+
+.in +4
+.RS
+EXPR1 + EXPR2
+.RE
+
+where \fIEXPR1\fR and \fIEXPR2\fR are the values to be concatenated.
 
 .SS OPERATOR ==
 The equality operator \fB==\fR is used to compare two values for equality. It
