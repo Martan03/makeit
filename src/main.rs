@@ -1,3 +1,5 @@
+use std::env;
+
 use args::Args;
 use config::Config;
 use err::error::Error;
@@ -34,8 +36,10 @@ fn main() -> Result<(), String> {
 
 fn load(config: &Config, args: &mut Args) -> Result<(), Error> {
     if let Some(name) = args.dst.file_name() {
-        args.add_var("NAME", name.to_string_lossy().to_string());
+        args.add_var("_PNAME", name.to_string_lossy().to_string());
     }
+    args.add_var("_PDIR", args.dst.to_string_lossy().to_string());
+    args.add_var("_OS", env::consts::OS.to_string());
 
     let Some(template) = &args.template else {
         printe("no template name provided");

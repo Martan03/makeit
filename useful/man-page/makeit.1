@@ -1,0 +1,107 @@
+.TH MAKEIT 1 2024-05-30
+.SH NAME
+makeit \- utility for creating and loading templates
+.SH SYNOPSIS
+.B makeit
+.I template
+[\fB\-d\fR \fIDIRECTORY\fR]
+[variables] ...
+
+.B makeit
+\fB\-c\fR
+.I template
+[\fB\-d\fR \fIDIRECTORY\fR]
+
+.B makemake
+[\fB\-h\fR]
+
+.SH DESCRIPTION
+.B makeit
+is a command-line utility for creating and loading templates.
+
+Templates also support usage of basic expressions. Expressions in templates are
+enclosed in \fB{{\fR and \fB}}\fR.
+
+.SS VARIABLES
+Variable name starts with alphabetic character or underscore and is followed
+by any alphanumeric character or underscore.
+
+Variables can be supplied using command-line arguments or by predefining them
+for each template (in \fBmakeit.json\fR). Varibles in template expressions are
+then expanded based on set variables.
+
+There are also internal variables:
+
+.TP
+.B _PNAME
+Project name based on project directory
+
+.TP
+.B _PDIR
+Project directory containing full path
+
+.TP
+.B _OS
+Operating system
+
+.SS LITERALS
+Literals are enclosed in double quotes (\fB"\fR). They support escape sequences
+as well, starting with backslash (\fB\\\fR).
+
+.TP
+\fB\\n\fR
+newline
+
+.TP
+\fB\\r\fR
+carriage return
+
+.TP
+\fB\\t\fR
+tabulator
+
+.TP
+\fB\\\\\fR
+backslash (\fB\\\fR)
+
+.TP
+\fB\\"\fR
+double quotes (\fB"\fR)
+
+.RE
+Other sequences are expanded to the character following backslash. This can be
+used for escaping expressions, which are enclosed in \fB{{ }}\fR. These
+expression won't be executed.
+
+.SS OPERATORS
+Todo
+
+.RE
+.SH OPTIONS
+
+Duplication of an option, that requires an argument, or template name will
+override previous argument value or template name.
+
+.TP
+\fB\-c \-\-create\fR \fItemplate_name\fR
+creates new template with given name
+
+.TP
+\fB\-d \-\-dir\fR \fIdirectory\fR
+sets directory to load/create template to/from (default is current directory)
+
+.TP
+\fB\-D\fIvariable_name\fR=\fIvalue\fR
+defines variable with given value
+
+.TP
+\fB\-l \-\-list\fR
+lists all templates
+
+.TP
+\fB\-h  \-\-help\fR
+prints help
+
+.RE
+.SH AUTHOR
+Martin Slezák (Martan03)
