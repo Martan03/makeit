@@ -24,7 +24,7 @@ where
     lexer: Lexer<'a, I>,
     output: Writer<'a>,
     vars: &'a HashMap<String, String>,
-    token: Token,
+    token: Option<Token>,
 }
 
 impl<'a, I> Parser<'a, I>
@@ -39,7 +39,7 @@ where
             lexer: Lexer::new(text),
             output: Writer::Stdout,
             vars,
-            token: Token::End,
+            token: Some(Token::End),
         }
     }
 
@@ -53,7 +53,7 @@ where
             lexer: Lexer::new(text),
             output: Writer::File(BufWriter::<File>::new(File::create(file)?)),
             vars,
-            token: Token::End,
+            token: Some(Token::End),
         })
     }
 
@@ -67,7 +67,7 @@ where
             lexer: Lexer::new(text),
             output: Writer::String(out),
             vars,
-            token: Token::End,
+            token: Some(Token::End),
         }
     }
 
@@ -108,9 +108,23 @@ where
     }
 
     fn parse_expr(&mut self) -> Result<Expr, LexerErr> {
-        self.token = self.lexer.next()?;
+        self.next_token();
         let mut prev = Expr::None;
 
+        while let Some(token) = self.token.take() {
+            match token {
+                Token::Question => return self.parse_check(prev),
+                Token::NullCheck => return self.parse_null_check(prev),
+                Token::Equals => return self.parse_equals(prev),
+                Token::Ident(v) => {
+                    prev = self.parse_var(prev, v.to_owned())?
+                }
+                Token::Literal(v) => {
+                    prev = self.parse_lit(prev, v.to_owned())?
+                }
+                _ => break,
+            }
+        }
         loop {
             match &self.token {
                 Token::Question => return self.parse_check(prev),
@@ -125,6 +139,22 @@ where
                 _ => break,
             };
             self.token = self.lexer.next()?;
+        }
+        Ok(prev)
+    }
+
+    fn parse_expr_hp(&mut self) -> Result<Expr, LexerErr> {
+        self.token = self.lexer.next()?;
+        let prev = Expr::None;
+
+        loop {
+            match &self.token {
+                Token::Ident(v) => return self.parse_var(prev, v.to_owned()),
+                Token::Literal(v) => {
+                    return self.parse_lit(prev, v.to_owned())
+                }
+                _ => break,
+            }
         }
         Ok(prev)
     }
@@ -155,7 +185,7 @@ where
     }
 
     fn parse_equals(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
-        let right = self.parse_expr()?;
+        let right = self.parse_expr_hp()?;
 
         Ok(Expr::Equals(EqualsExpr::new(
             Box::new(prev),
@@ -175,5 +205,12 @@ where
             Expr::None => Ok(Expr::Lit(LitExpr::new(Value::String(val)))),
             _ => Err(LexerErr::UnexpectedToken),
         }
+    }
+
+    fn next_token(&mut self) -> Result<(), LexerErr> {
+        if self.token.is_none() {
+            self.token = Some(self.lexer.next()?);
+        }
+        Ok(())
     }
 }
