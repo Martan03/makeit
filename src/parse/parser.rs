@@ -76,13 +76,23 @@ where
     /// Parses given text
     pub fn parse(&mut self) -> Result<(), Error> {
         while let Some(c) = self.lexer.cur {
-            if c == '{' {
-                self.check_opening()?;
-            } else {
-                self.output.write(c)?;
+            match c {
+                '{' => self.check_opening()?,
+                '\\' => self.handle_escape()?,
+                _ => self.output.write(c)?,
             }
             self.lexer.next_char();
         }
+        Ok(())
+    }
+
+    fn handle_escape(&mut self) -> Result<(), Error> {
+        self.lexer.next_char();
+        match self.lexer.cur {
+            Some('{') => self.output.write('{')?,
+            Some(c) => self.output.write_str(&format!("\\{c}"))?,
+            _ => Err(LexerErr::UnclosedBlock)?,
+        };
         Ok(())
     }
 

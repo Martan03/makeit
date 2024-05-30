@@ -24,6 +24,7 @@ pub struct Args {
     pub action: Action,
     pub help: bool,
     pub vars: HashMap<String, String>,
+    pub yes: bool,
 }
 
 impl Args {
@@ -47,6 +48,7 @@ impl Args {
                     parsed.help = true;
                     return Ok(parsed);
                 }
+                "-y" | "--yes" => parsed.yes = true,
                 var if var.starts_with("-D") => {
                     let var = &var[2..];
                     if let Some((name, val)) = var.split_once('=') {
@@ -81,12 +83,13 @@ impl Args {
             "makeit" ["options"] => "Behaves according to the options\n"
             "Options":
             "-c  --create" => "Creates new template with given name\n"
-            "-r --remove" => "Remove template with given name"
-            "-d --dir" ["path"] =>
+            "-r  --remove" => "Remove template with given name"
+            "-d  --dir" ["path"] =>
                 "Sets directory to create/load template from/to\n"
             "-D\x1b[39m[variable name]=[value]" => "Defines a variable\n"
-            "-l --list" => "Lists all templates\n"
-            "-h  --help" => "Prints this help (other options are ignored)"
+            "-l  --list" => "Lists all templates\n"
+            "-y  --yes" => "Automatically answers yes in yes-no prompts\n"
+            "-h   --help" => "Prints this help (other options are ignored)"
         );
     }
 }
@@ -98,6 +101,7 @@ impl Default for Args {
             dst: PathBuf::from("."),
             action: Action::Load,
             help: false,
+            yes: false,
             vars: HashMap::new(),
         }
     }

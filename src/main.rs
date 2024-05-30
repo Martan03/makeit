@@ -52,7 +52,7 @@ fn create(config: &Config, args: &Args) -> Result<(), Error> {
         printe("no template name provided");
         return Ok(());
     };
-    Template::create(&config, &args.dst, template)
+    Template::create(&config, &args, template)
 }
 
 fn remove(config: &Config, args: &Args) -> Result<(), Error> {

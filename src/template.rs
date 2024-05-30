@@ -38,13 +38,13 @@ impl Template {
     /// Creates new template with given name
     pub fn create(
         config: &Config,
-        src: &PathBuf,
+        args: &Args,
         name: &str,
     ) -> Result<(), Error> {
         let dir = config.template_dir.join(name);
-        if dir.exists() {
+        if dir.exists() && !args.yes {
             println!("Template '{name}' already exists.");
-            if !yes_no("Do you want to replace it?") {
+            if !args.yes && !yes_no("Do you want to replace it?") {
                 return Ok(());
             }
             remove_dir_all(&dir)?;
@@ -53,7 +53,7 @@ impl Template {
         let dst = dir.join("template");
         create_dir_all(&dst)?;
 
-        Template::copy_files_raw(src, &dst)?;
+        Template::copy_files_raw(&args.dst, &dst)?;
 
         let tmplt = Self {
             path: dir,
@@ -78,7 +78,7 @@ impl Template {
 
         if args.dst.exists() && args.dst.read_dir()?.next().is_some() {
             println!("Directory is not empty.");
-            if !yes_no("Do you want to continue anyway?") {
+            if !args.yes && !yes_no("Do you want to continue anyway?") {
                 return Ok(());
             }
         }

@@ -1,0 +1,10 @@
+{
+  "pre": "cargo init {{ lib ? \"--lib\" : \"\" }}",
+  "post": null,
+  "fileOptions": {
+    "README.md": {
+      "action": "Make"
+    }
+  },
+  "vars": {}
+}
