@@ -12,6 +12,7 @@ use crate::err::args_err::ArgsErr;
 pub enum Action {
     Load,
     Create,
+    Remove,
     List,
 }
 
@@ -35,6 +36,7 @@ impl Args {
         while let Some(arg) = args_iter.next() {
             match arg.as_str() {
                 "-c" | "--create" => parsed.action = Action::Create,
+                "-r" | "--remove" => parsed.action = Action::Remove,
                 "-d" | "--dir" => {
                     parsed.dst = PathBuf::from(
                         args_iter.next().ok_or(ArgsErr::MissingParam)?,
@@ -79,6 +81,7 @@ impl Args {
             "makeit" ["options"] => "Behaves according to the options\n"
             "Options":
             "-c  --create" => "Creates new template with given name\n"
+            "-r --remove" => "Remove template with given name"
             "-d --dir" ["path"] =>
                 "Sets directory to create/load template from/to\n"
             "-D\x1b[39m[variable name]=[value]" => "Defines a variable\n"

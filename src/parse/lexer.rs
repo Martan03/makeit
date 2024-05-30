@@ -8,6 +8,7 @@ pub enum Token {
     Colon,
     Question,
     NullCheck,
+    Equals,
     Ident(String),
     Literal(String),
     End,
@@ -52,6 +53,7 @@ where
                 self.next_char();
                 Ok(Token::Colon)
             }
+            Some('=') => self.read_equals(),
             Some('"') => self.read_literal(),
             Some(c) if c.is_alphabetic() || c == '_' => self.read_ident(),
             Some('}') => {
@@ -64,7 +66,7 @@ where
                 }
             }
             None => Err(LexerErr::UnclosedBlock),
-            _ => return Err(LexerErr::InvalidToken),
+            _ => Err(LexerErr::InvalidToken),
         }
     }
 
@@ -79,6 +81,18 @@ where
             }
             _ => Token::Question,
         })
+    }
+
+    fn read_equals(&mut self) -> Result<Token, LexerErr> {
+        self.next_char();
+
+        match self.cur {
+            Some('=') => {
+                self.next_char();
+                Ok(Token::Equals)
+            }
+            _ => Err(LexerErr::InvalidToken),
+        }
     }
 
     /// Reads identifier and check whether it contains allowed characters

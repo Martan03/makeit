@@ -73,8 +73,50 @@ Other sequences are expanded to the character following backslash. This can be
 used for escaping expressions, which are enclosed in \fB{{ }}\fR. These
 expression won't be executed.
 
-.SS OPERATORS
-Todo
+.SS OPERATOR ==
+The equality operator \fB==\fR is used to compare two values for equality. It
+evaluates to \fBtrue\fR if the values on either side of the operator are equal,
+and \fBfalse\fR otherwise.
+
+The syntax is:
+
+.in +4
+.RS
+EXPR1 == EXPR2
+.RE
+
+where \fIEXPR1\fR and \fIEXPR2\fR are the values or expressions to be compared.
+
+.SS OPERATOR ?:
+The ternary conditional operator \fB?:\fR is a shorthand for an if-else
+statement. It evaluates a condition and returns one of two values depending on
+whether the condition is true or false.
+
+The syntax is:
+
+.in +4
+.RS
+EXPR1 ? EXPR2 : EXPR3
+.RE
+
+where \fIEXPR1\fR is condition to evaluate, \fIEXPR2\fR is the value returned
+if the condition is true, and \fIEXPR3\fR is the value returned if the
+condition is false.
+
+.SS OPERATOR ??
+The null coalescing operator \fB??\fR is used to provide a default value when
+an expression evaluates to null. It returns value of the first operand
+if it is not null. Otherwise, it returns the value of the second operand.
+
+The syntax is:
+
+.in +4
+.RS
+EXPR1 ?? EXPR2
+.RE
+
+where \fIEXPR1\fR is the expression to evaluate, and \fIEXPR2\fR is the default
+value to return if \fIEXPR1\fR is null.
 
 .RE
 .SH OPTIONS
@@ -85,6 +127,9 @@ override previous argument value or template name.
 .TP
 \fB\-c \-\-create\fR \fItemplate_name\fR
 creates new template with given name
+
+\fB\-r \-\-remove\fR \fItemplate_name\fR
+removes template with given name
 
 .TP
 \fB\-d \-\-dir\fR \fIdirectory\fR

@@ -6,10 +6,15 @@ use std::{
 };
 
 use crate::{
-    ast::{CheckExpr, Expr, LitExpr, NullCheckExpr, Value, VarExpr},
     err::{error::Error, lexer_err::LexerErr},
-    lexer::{Lexer, Token},
     writer::Writer,
+};
+
+use super::{
+    ast::{
+        CheckExpr, EqualsExpr, Expr, LitExpr, NullCheckExpr, Value, VarExpr,
+    },
+    lexer::{Lexer, Token},
 };
 
 pub struct Parser<'a, I>
@@ -110,6 +115,7 @@ where
             match &self.token {
                 Token::Question => return self.parse_check(prev),
                 Token::NullCheck => return self.parse_null_check(prev),
+                Token::Equals => return self.parse_equals(prev),
                 Token::Ident(v) => {
                     prev = self.parse_var(prev, v.to_owned())?
                 }
@@ -143,6 +149,15 @@ where
         let right = self.parse_expr()?;
 
         Ok(Expr::NullCheck(NullCheckExpr::new(
+            Box::new(prev),
+            Box::new(right),
+        )))
+    }
+
+    fn parse_equals(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
+        let right = self.parse_expr()?;
+
+        Ok(Expr::Equals(EqualsExpr::new(
             Box::new(prev),
             Box::new(right),
         )))

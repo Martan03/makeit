@@ -8,12 +8,10 @@ use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
 use crate::template::Template;
 
 mod args;
-mod ast;
 mod config;
 mod err;
 mod file_options;
-mod lexer;
-mod parser;
+mod parse;
 mod prompt;
 mod template;
 mod writer;
@@ -29,6 +27,7 @@ fn main() -> Result<(), String> {
     match args.action {
         args::Action::Load => load(&config, &mut args),
         args::Action::Create => create(&config, &args),
+        args::Action::Remove => remove(&config, &args),
         args::Action::List => Template::list(&config),
     }
     .map_err(|e| e.to_string())
@@ -54,6 +53,14 @@ fn create(config: &Config, args: &Args) -> Result<(), Error> {
         return Ok(());
     };
     Template::create(&config, &args.dst, template)
+}
+
+fn remove(config: &Config, args: &Args) -> Result<(), Error> {
+    let Some(template) = &args.template else {
+        printe("no template name provided");
+        return Ok(());
+    };
+    Template::remove(config, template)
 }
 
 fn printe(msg: &str) {

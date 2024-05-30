@@ -17,7 +17,7 @@ use crate::{
     config::Config,
     err::{error::Error, template_err::TemplateErr},
     file_options::{FileAction, FileOptions},
-    parser::Parser,
+    parse::parser::Parser,
     prompt::yes_no,
 };
 
@@ -94,8 +94,21 @@ impl Template {
 
         create_dir_all(&args.dst)?;
         tmplt.pre_exec(&args.dst)?;
-        tmplt.copy(&args.dst)?;
+
+        let src = tmplt.get_template_dir();
+        tmplt.copy_files(&src, &args.dst)?;
+
         tmplt.post_exec(&args.dst)
+    }
+
+    /// Removes template
+    pub fn remove(config: &Config, name: &str) -> Result<(), Error> {
+        let dir = config.template_dir.join(name);
+        if !dir.exists() {
+            return Err(TemplateErr::NotFound(name.to_string()).into());
+        }
+
+        Ok(remove_dir_all(&dir)?)
     }
 
     /// Lists all templates
@@ -111,11 +124,6 @@ impl Template {
         let json_string = serde_json::to_string_pretty(self)?;
         file.write_all(json_string.as_bytes())?;
         Ok(())
-    }
-
-    fn copy(&mut self, to: &PathBuf) -> Result<(), Error> {
-        let src = self.get_template_dir();
-        self.copy_files(&src, to)
     }
 
     /// Executes pre script

@@ -29,6 +29,7 @@ pub enum Expr {
     Lit(LitExpr),
     Check(CheckExpr),
     NullCheck(NullCheckExpr),
+    Equals(EqualsExpr),
     None,
 }
 
@@ -39,6 +40,7 @@ impl Expr {
             Expr::Lit(l) => l.eval(vars),
             Expr::Check(c) => c.eval(vars),
             Expr::NullCheck(c) => c.eval(vars),
+            Expr::Equals(e) => e.eval(vars),
             Expr::None => Value::Null,
         }
     }
@@ -120,10 +122,16 @@ impl NullCheckExpr {
     }
 }
 
-expr_struct!(NoneExpr {});
+expr_struct!(EqualsExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+});
 
-impl NoneExpr {
-    fn eval(&self, _vars: &HashMap<String, String>) -> Value {
-        Value::Null
+impl EqualsExpr {
+    fn eval(&self, vars: &HashMap<String, String>) -> Value {
+        let left = self.left.eval(vars);
+        let right = self.right.eval(vars);
+
+        Value::Bool(left == right)
     }
 }
