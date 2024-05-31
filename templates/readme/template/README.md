@@ -11,10 +11,6 @@
 
 ## Links
 
-- **Author:** [{{ github_name }}][author]
-- **GitHub repository:** [{{ _PNAME }}][repo]
-- **Author website:** [{{ author_web_short }}][web]
-
-[author]: https://github.com/{{ github_name }}
-[repo]: [author]/{{ _PNAME }}
-[web]: {{ author_web }}
+- **Author:** [{{ github_name }}](https://github.com/{{ github_name }})
+- **GitHub repository:** [{{ _PNAME }}](https://github.com/{{ github_name }}/{{ _PNAME }})
+- **Author website:** [{{ author_web_short }}]({{ author_web }})
