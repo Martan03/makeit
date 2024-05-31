@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 /// Represents file action
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum FileAction {
-    Copy,
     #[default]
+    Copy,
     Make,
     Ignore,
 }

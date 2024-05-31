@@ -1,0 +1,71 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "makeit template config file",
+    "description": "Config file for a makeit template",
+    "type": "object",
+    "properties": {
+        "fileOptions": {
+            "description": "Dictionary of files that indicates what to do with the file",
+            "default": {},
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/FileOptions"
+            }
+        },
+        "post": {
+            "description": "Command that runs before the template is loaded",
+            "default": null,
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "pre": {
+            "description": "Command that runs after the template is loaded",
+            "default": null,
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "vars": {
+            "description": "Default values for variables",
+            "default": {},
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        }
+    },
+    "definitions": {
+        "FileAction": {
+            "description": "Indicates what to do with the file (Copy: copy file, Make: expand variables and copy, Ignore: do not copy)",
+            "type": "string",
+            "enum": [
+                "Copy",
+                "Make",
+                "Ignore"
+            ]
+        },
+        "FileOptions": {
+            "description": "Options of the file (action: what to do with the file, name: how to rename the file)",
+            "type": "object",
+            "properties": {
+                "action": {
+                    "default": "Copy",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/FileAction"
+                        }
+                    ]
+                },
+                "name": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        }
+    }
+}
