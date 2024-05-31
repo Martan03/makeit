@@ -1,0 +1,13 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Martan03/makeit/master/useful/json-schema/makeit-schema.json",
+    "fileOptions": {
+        "README.md": {
+            "action": "Make"
+        }
+    },
+    "vars": {
+        "github_name": "Martan03",
+        "author_web": "https://martan03.github.io",
+        "author_web_short": "martan03.github.io"
+    }
+}

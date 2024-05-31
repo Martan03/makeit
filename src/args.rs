@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, fs::canonicalize, path::PathBuf};
 
 use termint::{
     enums::fg::Fg,
@@ -39,7 +39,7 @@ impl Args {
                 "-c" | "--create" => parsed.action = Action::Create,
                 "-r" | "--remove" => parsed.action = Action::Remove,
                 "-d" | "--dir" => {
-                    parsed.dst = PathBuf::from(
+                    parsed.dst = Args::parse_path(
                         args_iter.next().ok_or(ArgsErr::MissingParam)?,
                     );
                 }
@@ -92,13 +92,18 @@ impl Args {
             "-h   --help" => "Prints this help (other options are ignored)"
         );
     }
+
+    /// Parses path
+    fn parse_path(path: String) -> PathBuf {
+        canonicalize(&path).unwrap_or(PathBuf::from(path))
+    }
 }
 
 impl Default for Args {
     fn default() -> Self {
         Self {
             template: None,
-            dst: PathBuf::from("."),
+            dst: Args::parse_path(".".to_string()),
             action: Action::Load,
             help: false,
             yes: false,

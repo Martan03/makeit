@@ -1,9 +1,7 @@
 {
     "$schema": "https://raw.githubusercontent.com/Martan03/makeit/master/useful/json-schema/makeit-schema.json",
+    "post": "makeit readme -y",
     "fileOptions": {
-        "README.md": {
-            "action": "Make"
-        },
         "src/main.c": {
             "action": "Make",
             "name": "{{ name ?? _PNAME ?? \"main\" }}.c"
