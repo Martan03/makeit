@@ -27,10 +27,13 @@ use crate::{
 pub struct Template {
     #[serde(skip)]
     path: PathBuf,
+    #[serde(default)]
     pre: Option<String>,
+    #[serde(default)]
     post: Option<String>,
-    #[serde(alias = "fileOptions")]
+    #[serde(default, alias = "fileOptions")]
     file_options: HashMap<String, FileOptions>,
+    #[serde(default)]
     vars: HashMap<String, String>,
 }
 

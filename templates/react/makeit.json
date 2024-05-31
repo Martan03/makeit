@@ -1,0 +1,9 @@
+{
+    "pre": "yarn create vite . --template react{{ ts ? \"-ts\" : \"\" }}",
+    "post": "npm install",
+    "fileOptions": {
+        "README.md": {
+            "action": "Make"
+        }
+    }
+}

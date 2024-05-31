@@ -1,0 +1,11 @@
+{
+    "fileOptions": {
+        "Makefile": {
+            "action": "Make"
+        },
+        "document.tex": {
+            "action": "Make",
+            "name": "{{ name ?? _PNAME ?? \"document\" }}.tex"
+        }
+    }
+}
