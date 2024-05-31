@@ -1,4 +1,5 @@
 {
+    "$schema": "https://raw.githubusercontent.com/Martan03/makeit/master/useful/json-schema/makeit-schema.json",
     "fileOptions": {
         "Makefile": {
             "action": "Make"
