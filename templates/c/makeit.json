@@ -1,0 +1,22 @@
+{
+    "fileOptions": {
+        "README.md": {
+            "action": "Make"
+        },
+        "src/main.c": {
+            "action": "Make",
+            "name": "{{ name ?? _PNAME ?? \"main\" }}.c"
+        },
+        ".gitignore": {
+            "action": "Make"
+        },
+        "Makefile": {
+            "action": "Make"
+        }
+    },
+    "vars": {
+        "cc": "cc",
+        "dflags": "-g -Wall -std=c17 -fsanitize=address",
+        "rflags": "-std=c17 -DNDEBUG -O3"
+    }
+}

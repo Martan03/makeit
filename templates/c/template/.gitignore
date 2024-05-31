@@ -1,0 +1,3 @@
+dep.d
+{{ _PNAME ?? "main" }}
+obj/
