@@ -32,16 +32,20 @@ impl<'a, I> Parser<'a, I>
 where
     I: Iterator<Item = Result<char, io::Error>>,
 {
-    /// Creates new [`Parser`]
+    /// Creates new [`Parser`] that outputs to stdout
     /// This exists for testing purposes
     #[allow(unused)]
-    pub fn new(text: &'a mut I, vars: &'a HashMap<String, String>) -> Self {
-        Self {
+    pub fn new(
+        text: &'a mut I,
+        vars: &'a HashMap<String, String>,
+    ) -> Result<(), Error> {
+        let mut parser = Self {
             lexer: Lexer::new(text),
             output: Writer::Stdout,
             vars,
             token: None,
-        }
+        };
+        parser.parse()
     }
 
     /// Creates new [`Parser`] that outputs to the file
@@ -49,13 +53,14 @@ where
         text: &'a mut I,
         vars: &'a HashMap<String, String>,
         file: &PathBuf,
-    ) -> Result<Self, io::Error> {
-        Ok(Self {
+    ) -> Result<(), Error> {
+        let mut parser = Self {
             lexer: Lexer::new(text),
             output: Writer::File(BufWriter::<File>::new(File::create(file)?)),
             vars,
             token: None,
-        })
+        };
+        parser.parse()
     }
 
     /// Creates new [`Parser`] that outputs to the given string
@@ -74,7 +79,7 @@ where
     }
 
     /// Parses given text
-    pub fn parse(&mut self) -> Result<(), Error> {
+    fn parse(&mut self) -> Result<(), Error> {
         while let Some(c) = self.lexer.cur {
             match c {
                 '{' => self.check_opening()?,
@@ -86,6 +91,7 @@ where
         Ok(())
     }
 
+    /// Handles escaping of the code block
     fn handle_escape(&mut self) -> Result<(), Error> {
         self.lexer.next_char();
         match self.lexer.cur {
@@ -96,15 +102,16 @@ where
         Ok(())
     }
 
-    fn check_opening(&mut self) -> Result<(), LexerErr> {
+    /// Checks for code block opening
+    fn check_opening(&mut self) -> Result<(), Error> {
         self.lexer.next_char();
         let Some(c) = self.lexer.cur else {
-            _ = self.output.write('{');
+            self.output.write('{')?;
             return Ok(());
         };
 
         if c != '{' {
-            _ = self.output.write_str(&format!("{{{c}"));
+            self.output.write_str(&format!("{{{c}"))?;
             return Ok(());
         }
 
@@ -112,14 +119,17 @@ where
         self.handle_code()
     }
 
-    fn handle_code(&mut self) -> Result<(), LexerErr> {
+    /// Handles code block
+    fn handle_code(&mut self) -> Result<(), Error> {
         let expr = self.parse_expr()?;
-        _ = self.output.write_str(&format!("{}", expr.eval(&self.vars)));
+        self.output
+            .write_str(&format!("{}", expr.eval(&self.vars)))?;
         self.token = None;
 
         Ok(())
     }
 
+    /// Parses expression
     fn parse_expr(&mut self) -> Result<Expr, LexerErr> {
         self.next_token()?;
         let mut prev = Expr::None;
@@ -147,17 +157,21 @@ where
         Ok(prev)
     }
 
+    /// Parses expression for high priority only
     fn parse_expr_hp(&mut self) -> Result<Expr, LexerErr> {
         self.next_token()?;
-        let prev = Expr::None;
+        let mut prev = Expr::None;
 
         while let Some(token) = self.token.take() {
             match token {
-                Token::Ident(v) => return self.parse_var(prev, v.to_owned()),
-                Token::Literal(v) => {
-                    return self.parse_lit(prev, v.to_owned())
+                Token::Ident(v) => {
+                    prev = self.parse_var(prev, v.to_owned())?
                 }
-                Token::OpenParen => return self.parse_paren(prev),
+                Token::Literal(v) => {
+                    prev = self.parse_lit(prev, v.to_owned())?
+                }
+                Token::OpenParen => prev = self.parse_paren(prev)?,
+                Token::Plus => prev = self.parse_plus(prev)?,
                 _ => {
                     self.token = Some(token);
                     break;
@@ -167,6 +181,7 @@ where
         Ok(prev)
     }
 
+    /// Parses check expression (?:)
     fn parse_check(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
         let left = self.parse_expr()?;
 
@@ -183,6 +198,7 @@ where
         )))
     }
 
+    /// Parses null check expression
     fn parse_null_check(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
         let right = self.parse_expr()?;
 
@@ -192,6 +208,7 @@ where
         )))
     }
 
+    /// Parses equals expression
     fn parse_equals(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
         let right = self.parse_expr_hp()?;
 
@@ -201,6 +218,7 @@ where
         )))
     }
 
+    /// Parses variable
     fn parse_var(&self, prev: Expr, name: String) -> Result<Expr, LexerErr> {
         match prev {
             Expr::None => Ok(Expr::Var(VarExpr::new(name))),
@@ -208,6 +226,7 @@ where
         }
     }
 
+    /// Parses literals
     fn parse_lit(&self, prev: Expr, val: String) -> Result<Expr, LexerErr> {
         match prev {
             Expr::None => Ok(Expr::Lit(LitExpr::new(Value::String(val)))),
@@ -215,6 +234,7 @@ where
         }
     }
 
+    /// Parses parentheses
     fn parse_paren(&mut self, _prev: Expr) -> Result<Expr, LexerErr> {
         let expr = self.parse_expr()?;
 
@@ -224,12 +244,14 @@ where
         Ok(expr)
     }
 
+    /// Parses plus expression
     fn parse_plus(&mut self, prev: Expr) -> Result<Expr, LexerErr> {
         let right = self.parse_expr_hp()?;
 
         Ok(Expr::Add(AddExpr::new(Box::new(prev), Box::new(right))))
     }
 
+    /// Gets next token, when previous one is already taken
     fn next_token(&mut self) -> Result<(), LexerErr> {
         if self.token.is_none() {
             self.token = Some(self.lexer.next()?);

@@ -57,10 +57,7 @@ impl Template {
 
         let tmplt = Self {
             path: dir,
-            pre: None,
-            post: None,
-            file_options: HashMap::new(),
-            vars: HashMap::new(),
+            ..Self::default()
         };
         tmplt.save()
     }
@@ -277,8 +274,7 @@ impl Template {
     fn parse_file(&self, src: &PathBuf, dst: &PathBuf) -> Result<(), Error> {
         let mut buf = BufReader::new(File::open(src)?);
         let mut chars = buf.chars();
-        let mut parser = Parser::file(&mut chars, &self.vars, dst)?;
-        Ok(parser.parse()?)
+        Parser::file(&mut chars, &self.vars, dst)
     }
 
     /// Creates dir when doesn't exist
@@ -287,6 +283,18 @@ impl Template {
             Ok(()) => Ok(()),
             Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => Ok(()),
             Err(e) => Err(e),
+        }
+    }
+}
+
+impl Default for Template {
+    fn default() -> Self {
+        Self {
+            path: Default::default(),
+            pre: Default::default(),
+            post: Default::default(),
+            file_options: Default::default(),
+            vars: Default::default(),
         }
     }
 }

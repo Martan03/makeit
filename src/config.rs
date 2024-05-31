@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(alias = "templateDir")]
     pub template_dir: PathBuf,
 }
 
