@@ -83,7 +83,7 @@ impl Args {
             "makeit" ["options"] => "Behaves according to the options\n"
             "Options":
             "-c  --create" => "Creates new template with given name\n"
-            "-r  --remove" => "Remove template with given name"
+            "-r  --remove" => "Remove template with given name\n"
             "-d  --dir" ["path"] =>
                 "Sets directory to create/load template from/to\n"
             "-D\x1b[39m[variable name]=[value]" => "Defines a variable\n"

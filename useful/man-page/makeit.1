@@ -20,8 +20,10 @@ makeit \- utility for creating and loading templates
 is a command-line utility for creating and loading templates.
 
 Templates also support usage of basic expressions. Expressions in templates are
-enclosed in \fB{{\fR and \fB}}\fR. Precedence of the expressions can be
-modified by using parentheses.
+enclosed in \fB{{\fR and \fB}}\fR. If file expression sequence (\fB{{\fR) which
+should not be interpreted as expression, it can be escaped. When file is then
+parsed, the escape character (\fB\\\fR) will be removed and expression not
+executed. Precedence of the expressions can be modified by using parentheses.
 
 Expressions can contain following:
 
@@ -72,9 +74,7 @@ backslash (\fB\\\fR)
 double quotes (\fB"\fR)
 
 .RE
-Other sequences are expanded to the character following backslash. This can be
-used for escaping expressions, which are enclosed in \fB{{ }}\fR. These
-expression won't be executed.
+Other sequences are expanded to the character following backslash.
 
 .SS OPERATOR +
 The plus operator \fB+\fR is used for literal and variable concatenation. It
