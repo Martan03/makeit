@@ -1,0 +1,5 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Martan03/makeit/master/useful/json-schema/makeit-schema.json",
+    "pre": "npx create-expo-app@latest . {{ ts ? \"--template blank-typescript\" : \"\" }}",
+    "post": "makeit readme -y"
+}
