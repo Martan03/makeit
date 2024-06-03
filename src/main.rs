@@ -32,6 +32,7 @@ fn run() -> Result<(), Error> {
         Some(Action::Remove) => remove(&config, &args),
         Some(Action::List) => Template::list(&config),
         Some(Action::Help) => Ok(Args::help()),
+        Some(Action::Version) => Ok(version()),
         _ => load(&config, &mut args),
     }
 }
@@ -57,4 +58,9 @@ fn create(config: &Config, args: Args) -> Result<(), Error> {
 fn remove(config: &Config, args: &Args) -> Result<(), Error> {
     args.check_template()?;
     Template::remove(config, args)
+}
+
+fn version() {
+    let v = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
+    println!("makeit {v}");
 }

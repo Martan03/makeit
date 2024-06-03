@@ -137,9 +137,6 @@ value to return if \fIEXPR1\fR is null.
 .RE
 .SH OPTIONS
 
-Duplication of an option, that requires an argument, or template name will
-override previous argument value or template name.
-
 .TP
 \fB\-c \-\-create\fR \fItemplate_name\fR
 creates new template with given name
@@ -149,16 +146,25 @@ creates new template with given name
 removes template with given name
 
 .TP
+\fB\-l \-\-list\fR
+lists all templates
+
+.TP
 \fB\-d \-\-dir\fR \fIdirectory\fR
 sets directory to load/create template to/from (default is current directory)
 
 .TP
-\fB\-D\fIvariable_name\fR=\fIvalue\fR
-defines variable with given value
+\fB\--pre\fR \fIscript\fR
+sets pre-script of the template (only with '--create')
 
 .TP
-\fB\-l \-\-list\fR
-lists all templates
+\fB\--post\fR \fIscript\fR
+sets pre-script of the template (only with '--create')
+
+.TP
+\fB\-D\fIvariable_name\fR=\fIvalue\fR
+defines variable with given value (when creating template, sets as default
+value for template)
 
 .TP
 \fB\-y \-\-yes\fR

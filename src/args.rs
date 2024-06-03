@@ -14,6 +14,7 @@ pub enum Action {
     Remove,
     List,
     Help,
+    Version,
 }
 
 /// Struct for parsing arguments
@@ -41,6 +42,7 @@ impl Args {
                 "-r" | "--remove" => parsed.set_action(Action::Remove)?,
                 "-l" | "--list" => parsed.set_action(Action::List)?,
                 "-h" | "--help" => parsed.set_action(Action::Help)?,
+                "-v" | "--version" => parsed.set_action(Action::Version)?,
                 "-d" | "--dir" => parsed.set_path(
                     args_iter.next().ok_or(ArgsErr::MissingParam)?,
                 )?,
@@ -107,6 +109,7 @@ impl Args {
                 "Sets post-script to given script (only with '--create')\n"
             "-D\x1b[39m[variable name]=[value]" => "Defines a variable\n"
             "-y  --yes" => "Automatically answers yes in yes-no prompts\n"
+            "-v  --version" => "Prints the version number"
             "-h   --help" => "Prints this help (other options are ignored)"
         );
     }
