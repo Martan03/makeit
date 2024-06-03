@@ -19,7 +19,7 @@ use crate::{
     err::{error::Error, template_err::TemplateErr},
     file_options::{FileAction, FileOptions},
     parse::parser::Parser,
-    prompt::yes_no,
+    prompt::{not_empty_prompt, replace_prompt},
 };
 
 /// Represents makeit template
@@ -31,7 +31,7 @@ pub struct Template {
     pre: Option<String>,
     #[serde(default)]
     post: Option<String>,
-    #[serde(default, alias = "fileOptions")]
+    #[serde(default, rename = "fileOptions")]
     file_options: HashMap<String, FileOptions>,
     #[serde(default)]
     vars: HashMap<String, String>,
@@ -39,15 +39,13 @@ pub struct Template {
 
 impl Template {
     /// Creates new template with given name
-    pub fn create(
-        config: &Config,
-        args: &Args,
-        name: &str,
-    ) -> Result<(), Error> {
-        let dir = config.template_dir.join(name);
-        if dir.exists() && !args.yes {
-            println!("Template '{name}' already exists.");
-            if !args.yes && !yes_no("Do you want to replace it?") {
+    pub fn create(config: &Config, args: Args) -> Result<(), Error> {
+        let template = args.template.as_ref().unwrap();
+        let src = args.get_path();
+
+        let dir = config.template_dir.join(template);
+        if dir.exists() {
+            if !replace_prompt(template, args.yes) {
                 return Ok(());
             }
             remove_dir_all(&dir)?;
@@ -56,29 +54,30 @@ impl Template {
         let dst = dir.join("template");
         create_dir_all(&dst)?;
 
-        Template::copy_files_raw(&args.dst, &dst)?;
+        Template::copy_files_raw(&src, &dst)?;
 
         let tmplt = Self {
             path: dir,
+            vars: args.vars,
+            pre: args.pre,
+            post: args.post,
             ..Self::default()
         };
         tmplt.save()
     }
 
     /// Loads template by given name
-    pub fn load(
-        config: &Config,
-        args: &Args,
-        name: &str,
-    ) -> Result<(), Error> {
-        let dir = config.template_dir.join(name);
+    pub fn load(config: &Config, args: &Args) -> Result<(), Error> {
+        let template = args.template.as_ref().unwrap();
+        let dst = args.get_path();
+
+        let dir = config.template_dir.join(template);
         if !dir.exists() {
-            return Err(TemplateErr::NotFound(name.to_string()).into());
+            return Err(TemplateErr::NotFound(template.to_string()).into());
         }
 
-        if args.dst.exists() && args.dst.read_dir()?.next().is_some() {
-            println!("Directory is not empty.");
-            if !args.yes && !yes_no("Do you want to continue anyway?") {
+        if dst.exists() && dst.read_dir()?.next().is_some() {
+            if !not_empty_prompt(args.yes) {
                 return Ok(());
             }
         }
@@ -94,20 +93,21 @@ impl Template {
             }
         }
 
-        create_dir_all(&args.dst)?;
-        tmplt.pre_exec(&args.dst)?;
+        create_dir_all(&dst)?;
+        tmplt.pre_exec(&dst)?;
 
         let src = tmplt.get_template_dir();
-        tmplt.copy_files(&src, &args.dst)?;
+        tmplt.copy_files(&src, &dst)?;
 
-        tmplt.post_exec(&args.dst)
+        tmplt.post_exec(&dst)
     }
 
     /// Removes template
-    pub fn remove(config: &Config, name: &str) -> Result<(), Error> {
-        let dir = config.template_dir.join(name);
+    pub fn remove(config: &Config, args: &Args) -> Result<(), Error> {
+        let template = args.template.as_ref().unwrap();
+        let dir = config.template_dir.join(template);
         if !dir.exists() {
-            return Err(TemplateErr::NotFound(name.to_string()).into());
+            return Err(TemplateErr::NotFound(template.to_string()).into());
         }
 
         Ok(remove_dir_all(&dir)?)

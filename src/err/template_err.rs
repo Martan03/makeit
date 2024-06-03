@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub enum TemplateErr {
     NotFound(String),
     PreExec,

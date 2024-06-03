@@ -1,10 +1,14 @@
 use std::{fmt::Display, io};
 
-use super::{lexer_err::LexerErr, template_err::TemplateErr};
+use super::{
+    args_err::ArgsErr, lexer_err::LexerErr, template_err::TemplateErr,
+};
 
 /// Generic error type
+#[derive(Debug)]
 pub enum Error {
     IOErr(io::Error),
+    ArgsErr(ArgsErr),
     LexerErr(LexerErr),
     TemplateErr(TemplateErr),
     Serde(serde_json::Error),
@@ -15,6 +19,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::IOErr(e) => write!(f, "{e}"),
+            Error::ArgsErr(e) => write!(f, "{e}"),
             Error::LexerErr(e) => write!(f, "{e}"),
             Error::TemplateErr(e) => write!(f, "{e}"),
             Error::Serde(e) => write!(f, "{e}"),
@@ -26,6 +31,12 @@ impl Display for Error {
 impl From<io::Error> for Error {
     fn from(value: io::Error) -> Self {
         Self::IOErr(value)
+    }
+}
+
+impl From<ArgsErr> for Error {
+    fn from(value: ArgsErr) -> Self {
+        Self::ArgsErr(value)
     }
 }
 

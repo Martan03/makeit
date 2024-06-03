@@ -1,6 +1,6 @@
-use std::env;
+use std::{env, process};
 
-use args::Args;
+use args::{Action, Args};
 use config::Config;
 use err::error::Error;
 use termint::{enums::fg::Fg, widgets::span::StrSpanExtension};
@@ -16,53 +16,45 @@ mod prompt;
 mod template;
 mod writer;
 
-fn main() -> Result<(), String> {
-    let mut args = Args::parse(std::env::args()).map_err(|_| "args err")?;
-    if args.help {
-        Args::help();
-        return Ok(());
+fn main() {
+    if let Err(e) = run() {
+        println!("{} {e}", "Error:".fg(Fg::Red));
+        process::exit(1);
     }
+}
+
+fn run() -> Result<(), Error> {
+    let mut args = Args::parse(std::env::args())?;
 
     let config = Config::load()?;
     match args.action {
-        args::Action::Load => load(&config, &mut args),
-        args::Action::Create => create(&config, &args),
-        args::Action::Remove => remove(&config, &args),
-        args::Action::List => Template::list(&config),
+        Some(Action::Create) => create(&config, args),
+        Some(Action::Remove) => remove(&config, &args),
+        Some(Action::List) => Template::list(&config),
+        Some(Action::Help) => Ok(Args::help()),
+        _ => load(&config, &mut args),
     }
-    .map_err(|e| e.to_string())
 }
 
 fn load(config: &Config, args: &mut Args) -> Result<(), Error> {
-    if let Some(name) = args.dst.file_name() {
+    args.check_template()?;
+
+    let dst = args.get_path();
+    if let Some(name) = dst.file_name() {
         args.add_var("_PNAME", name.to_string_lossy().to_string());
     }
-    args.add_var("_PDIR", args.dst.to_string_lossy().to_string());
+    args.add_var("_PDIR", dst.to_string_lossy().to_string());
     args.add_var("_OS", env::consts::OS.to_string());
 
-    let Some(template) = &args.template else {
-        printe("no template name provided");
-        return Ok(());
-    };
-    Template::load(&config, &args, template)
+    Template::load(config, args)
 }
 
-fn create(config: &Config, args: &Args) -> Result<(), Error> {
-    let Some(template) = &args.template else {
-        printe("no template name provided");
-        return Ok(());
-    };
-    Template::create(&config, &args, template)
+fn create(config: &Config, args: Args) -> Result<(), Error> {
+    args.check_template()?;
+    Template::create(config, args)
 }
 
 fn remove(config: &Config, args: &Args) -> Result<(), Error> {
-    let Some(template) = &args.template else {
-        printe("no template name provided");
-        return Ok(());
-    };
-    Template::remove(config, template)
-}
-
-fn printe(msg: &str) {
-    eprintln!("{} {msg}", "Error:".fg(Fg::Red));
+    args.check_template()?;
+    Template::remove(config, args)
 }
