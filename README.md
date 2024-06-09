@@ -4,23 +4,30 @@
 
 Utility for creating and loading templates
 
-
 ## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-    - [Loading templates](#loading-templates)
-    - [Creating template](#creating-template)
-    - [Other usage](#other-usage)
-- [Technologies](#technologies)
-- [Links](#links)
+{{ mdcon }}
 
 ## Installation
-You have to compile it yourself, but that shouldn't be a problem. Only thing
-you need is `cargo`:
+
+### AUR package
+
+`makeit` is available as an
+[AUR package](https://aur.archlinux.org/packages/makeit). You can install it
+with any AUR package manager. This is example installation with
+[`yay`](https://github.com/Jguer/yay):
+
+```
+yay -S makeit
+```
+
+### Compile it your own
+
+You can also clone this repo and compile it yourself. But that shouldn't be a
+problem, since only thing you need is `cargo`:
 ```
 cargo build -r
 ```
-After its done compiling, you can start it in `./target/release/makeit`
+After it's done compiling, you can start it in `./target/release/makeit`
 
 ## Usage
 
@@ -39,10 +46,57 @@ template is create from current directory):
 ```
 
 ### Other usage
-To see other options, visit `makeit` help:
+To see full usage and other options, visit `makeit` help or `man-page`:
 ```
 ./makeit -h
 ```
+
+## Detailed description
+
+### Custom expression language
+For parametrization of the templates I created custom expression language.
+Expressions are enclosed in `{{` and `}}`.
+
+#### Variables
+- Can be defined in `makeit.json` file of the template or supplied using
+command-line arguments
+- Name has to start with alphabetic character or underscore and is followed
+by any alphanumeric character or underscore
+
+##### Internal variables
+- `_PNAME`: project name based on project directory
+- `_PDIR`: project directory
+- `_OS`: operatins system
+
+#### Literals
+- Enclosed in double quotes (")
+- They support escape sequences:
+    - `\n`: newline
+    - `\r`: carriage return
+    - `\t`: tabulator
+    - `\\`: backslash
+    - `\"`: double quotes
+    - Other sequences are expanded to character following backslash
+
+#### Operators
+
+##### Operator +
+- Variables and literals concatenation
+- Combines them to single literal
+- Syntax:
+    - `EXPR1 + EXPR2`
+
+##### Operator ==
+- Compares two values for equality (`true` when equals, else `false`)
+- Syntax:
+    - `EXPR1 == EXPR2`
+
+##### Operator ??
+- The null coalescing operator - provides default value for an expression,
+which evaluates to `null`
+- Syntax:
+    - `EXPR1 ?? EXPR2`: returns value of `EXPR1` of not `null` else value of
+    `EXPR2`
 
 ## Technologies
 I used these libraries, which were really helpful:
