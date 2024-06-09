@@ -5,7 +5,24 @@
 Utility for creating and loading templates
 
 ## Table of Contents
-{{ mdcon }}
+- [Installation](#installation)
+    - [AUR package](#aur-package)
+    - [Compile it your own](#compile-it-your-own)
+- [Usage](#usage)
+    - [Loading templates](#loading-templates)
+    - [Creating template](#creating-template)
+    - [Other usage](#other-usage)
+- [Detailed description](#detailed-description)
+    - [Custom expression language](#custom-expression-language)
+        - [Variables](#variables)
+            - [Internal variables](#internal-variables)
+        - [Literals](#literals)
+        - [Operators](#operators)
+            - [Operator +](#operator-)
+            - [Operator ==](#operator-)
+            - [Operator ??](#operator-)
+- [Technologies](#technologies)
+- [Links](#links)
 
 ## Installation
 
