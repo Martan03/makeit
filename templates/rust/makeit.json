@@ -2,6 +2,11 @@
     "$schema": "https://raw.githubusercontent.com/Martan03/makeit/master/useful/json-schema/makeit-schema.json",
     "pre": "cargo init {{ lib ? \"--lib\" : \"\" }}",
     "post": "makeit readme -y",
+    "fileOptions": {
+        ".rustfmt.toml": {
+            "action": "Make"
+        }
+    },
     "vars": {
         "line": "79"
     }
