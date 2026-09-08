@@ -1,2 +1,5 @@
-pub mod action;
-pub mod args_struct;
+mod args_struct;
+pub use args_struct::Args;
+
+mod action;
+pub use action::Action;

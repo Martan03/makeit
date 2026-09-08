@@ -1,5 +1,10 @@
 {
     "$schema": "https://raw.githubusercontent.com/Martan03/makeit/master/useful/json-schema/makeit-schema.json",
     "pre": "makeit rust",
-    "post": "cargo add crossterm pareg termint thiserror"
+    "post": "cargo add crossterm pareg termint thiserror",
+    "fileOptions": {
+        "src/args/args_struct.rs": {
+            "action": "Make"
+        }
+    }
 }

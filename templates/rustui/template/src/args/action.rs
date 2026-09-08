@@ -1,7 +1,10 @@
-/// CLI arguments available actions
+/// CLI arguments available actions.
+///
+/// Default action is running the app.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum Action {
-    // TODO: add CLI actions
     #[default]
+    Run,
     Help,
+    Version,
 }

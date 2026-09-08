@@ -1,53 +1,43 @@
-use std::{
-    io::{stdout, Write},
-    panic::{set_hook, take_hook},
-    process::ExitCode,
-};
+use std::process::ExitCode;
 
-use crossterm::terminal::{disable_raw_mode, is_raw_mode_enabled};
 use pareg::Pareg;
-use termint::termal::eprintcln;
+use termint::{enums::Color, style::Stylize, term::Term};
 
 use crate::{
-    args::{action::Action, args_struct::Args},
+    app::App,
+    args::{Action, Args},
     error::Error,
 };
 
 pub mod app;
 pub mod args;
 pub mod error;
-pub mod tui;
 
 fn main() -> ExitCode {
     match run() {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintcln!("{'r}Error:{'_} {}", e);
+            eprintln!("{} {}", "Error:".fg(Color::Red), e);
             ExitCode::FAILURE
         }
     }
 }
 
 fn run() -> Result<(), Error> {
-    register_panic_hook();
-
     let args = Args::parse(Pareg::args())?;
     match args.action {
-        Action::Help => println!("help wip"),
+        Action::Run => run_app()?,
+        Action::Help => Args::help(),
+        Action::Version => Args::version(),
     }
-
     Ok(())
 }
 
-fn register_panic_hook() {
-    let hook = take_hook();
-    set_hook(Box::new(move |pi| {
-        if is_raw_mode_enabled().unwrap_or_default() {
-            // Restores screen
-            print!("\x1b[?1049l\x1b[?25h");
-            _ = stdout().flush();
-            _ = disable_raw_mode();
-        }
-        hook(pi);
-    }));
+fn run_app() -> Result<(), Error> {
+    let mut app = App::new();
+    Term::default()
+        .setup()?
+        .small_screen(App::small_screen())
+        .run(&mut app)?;
+    Ok(())
 }
