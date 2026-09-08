@@ -13,7 +13,11 @@ impl Args {
 
     pub const VERSION_NUMBER: &str = {
         let v = option_env!("CARGO_PKG_VERSION");
-        if let Some(v) = v { v } else { "unknown" }
+        if let Some(v) = v {
+            v
+        } else {
+            "unknown"
+        }
     };
 
     /// Returns parsed CLI arguments.
@@ -55,11 +59,12 @@ TODO: Edit this help message according to your project.
     Displays this help.
 
   {'y}-v  --version{'_}
-    Displays the version number of {'c}faupi{'_}.",
+    Displays the version number of {'c}{}{'_}.",
             Self::APP_NAME,
             termal::gradient("Martan03", (0, 220, 255), (175, 80, 255)),
             Self::VERSION_NUMBER,
             Self::APP_NAME,
+            Self::APP_NAME
         );
     }
 
